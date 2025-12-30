@@ -1,0 +1,77 @@
+<div class="dashboard-container">
+    <!-- Sidebar with League Selection -->
+    <aside class="sidebar">
+        <h2 class="sidebar-title">My Leagues</h2>
+        <div class="league-list">
+            @for (league of leagues(); track league.id) {
+            <button class="league-item" [class.selected]="selectedLeague()?.id === league.id"
+                (click)="selectLeague(league.id)">
+                <div class="league-info">
+                    <span class="league-name">{{ league.name }}</span>
+                    <span class="league-status" [class]="'status-' + league.status">
+                        {{ league.status }}
+                    </span>
+                </div>
+            </button>
+            }
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <header class="dashboard-header">
+            <div>
+                <h1 class="text-gradient">Upcoming Matches</h1>
+                @if (selectedLeague()) {
+                <p class="league-subtitle">{{ selectedLeague()?.name }}</p>
+                }
+            </div>
+            <div class="header-actions">
+                <a routerLink="/league" class="btn btn-secondary">Dashboard</a>
+                <a routerLink="/matches/entry" class="btn">Enter Score</a>
+            </div>
+        </header>
+
+        <!-- Matches Grid -->
+        <div class="matches-grid">
+            @if (upcomingMatches().length === 0) {
+            <div class="empty-state card">
+                <h3>No upcoming matches</h3>
+                <p style="color: var(--color-text-muted);">
+                    Check back later or select a different league.
+                </p>
+            </div>
+            }
+            @for (match of upcomingMatches(); track match.id) {
+            <div class="match-card card" (click)="viewMatchDetail(match.id)">
+                <div class="match-header">
+                    <div class="match-date">
+                        <span class="date-text">{{ formatDate(match.date) }}</span>
+                        <span class="time-text">{{ match.time }}</span>
+                    </div>
+                    <span class="court-badge">{{ match.court }}</span>
+                </div>
+
+                <div class="match-teams">
+                    <div class="team my-team">
+                        <span class="team-label">My Team</span>
+                        <span class="team-players">{{ getTeammates(match) || 'Partner TBD' }}</span>
+                    </div>
+
+                    <div class="vs-divider">VS</div>
+
+                    <div class="team opponent-team">
+                        <span class="team-label">Opponents</span>
+                        <span class="team-players">{{ getOpponents(match) }}</span>
+                    </div>
+                </div>
+
+                <div class="match-footer">
+                    <span class="league-tag">{{ match.leagueName }}</span>
+                    <span class="view-details">View Details →</span>
+                </div>
+            </div>
+            }
+        </div>
+    </main>
+</div>

@@ -1,0 +1,50 @@
+<div class="container" style="padding-top: var(--space-xl);">
+    <!-- Header -->
+    <header class="flex-center" style="justify-content: space-between; margin-bottom: var(--space-xl);">
+        <h1 class="text-gradient">Pickleball League</h1>
+        <div class="flex-center gap-md">
+            <span>Welcome, {{ currentUser()?.userName }}</span>
+            <button class="btn btn-secondary" (click)="logout()">Sign Out</button>
+        </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg);">
+
+        <!-- League Management Card -->
+        <div class="card">
+            <h3>League Management</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+                Join leagues, view daily slots, and manage your groups.
+            </p>
+            <div class="flex-col gap-sm">
+                <button class="btn" routerLink="/league">View Current League</button>
+                <button class="btn btn-secondary" routerLink="/league/slotting">View Daily Slots</button>
+            </div>
+        </div>
+
+        <!-- Match History Card -->
+        <div class="card">
+            <h3>My Matches</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+                Enter scores and view your match history.
+            </p>
+            <div class="flex-col gap-sm">
+                <button class="btn" routerLink="/matches/entry">Enter Score</button>
+                <button class="btn btn-secondary" routerLink="/matches/history">View History</button>
+            </div>
+        </div>
+
+        <!-- Stats Card -->
+        <div class="card">
+            <h3>Statistics</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+                Track your rating and partner performance.
+            </p>
+            <div class="flex-col gap-sm">
+                <button class="btn btn-secondary" routerLink="/profile">View Profile</button>
+            </div>
+        </div>
+
+    </div>
+</div>

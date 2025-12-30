@@ -1,0 +1,47 @@
+<div class="container" style="padding-top: var(--space-lg);">
+    <div class="flex-center" style="justify-content: space-between; margin-bottom: var(--space-lg);">
+        <h2 class="text-gradient">Admin Dashboard</h2>
+        <a routerLink="/league" class="btn btn-secondary">Back to App</a>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--space-lg);">
+
+        <!-- Create League -->
+        <div class="card">
+            <h3>League Management</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+                Create new leagues and manage existing ones.
+            </p>
+            <button class="btn" routerLink="/admin/create-league">Create New League</button>
+
+            <div style="margin-top: var(--space-md);">
+                <h4 style="margin-bottom: var(--space-sm);">Active Leagues</h4>
+                @for (league of leagues(); track league.league_id) {
+                <div [routerLink]="['/league/slotting']" [queryParams]="{league_id: league.league_id}"
+                    class="flex-center interactive-card"
+                    style="justify-content: space-between; padding: var(--space-sm); background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin-bottom: var(--space-xs); cursor: pointer;">
+                    <span>{{ league.league_name }}</span>
+                    <span
+                        style="font-size: 0.8rem; padding: 2px 6px; border-radius: 4px; background: var(--color-success); color: white;">{{
+                        league.league_status }}</span>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Gameplay Operations -->
+        <div class="card">
+            <h3>Gameplay Operations</h3>
+            <p style="color: var(--color-text-muted); margin-bottom: var(--space-md);">
+                Manage daily operations and slotting.
+            </p>
+            <div class="flex-col gap-sm">
+                <button class="btn btn-secondary" (click)="triggerSlotting()">Trigger Daily Slotting</button>
+                <p style="font-size: 0.8rem; color: var(--color-text-muted);">
+                    Sorts players into groups based on current ratings.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>

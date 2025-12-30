@@ -1,0 +1,27 @@
+import { Routes } from '@angular/router';
+import { LoginComponent } from './auth/login';
+import { SignupComponent } from './auth/signup';
+import { DashboardComponent } from './league/dashboard';
+import { DailySlottingComponent } from './league/daily-slotting';
+import { MatchEntryComponent } from './matches/match-entry';
+import { MatchHistoryComponent } from './matches/match-history';
+import { ProfileComponent } from './stats/profile';
+import { DashboardComponent as AdminDashboardComponent } from './admin/dashboard';
+import { CreateLeagueComponent } from './admin/create-league';
+import { PlayerDashboardComponent } from './player/player-dashboard';
+import { MatchDetailComponent } from './player/match-detail';
+
+export const routes: Routes = [
+    { path: 'admin', component: AdminDashboardComponent },
+    { path: 'admin/create-league', component: CreateLeagueComponent },
+    { path: 'login', component: LoginComponent },
+    { path: 'signup', component: SignupComponent },
+    { path: 'player', component: PlayerDashboardComponent },
+    { path: 'player/match/:id', component: MatchDetailComponent },
+    { path: 'league', component: DashboardComponent },
+    { path: 'league/slotting', component: DailySlottingComponent },
+    { path: 'matches/entry', component: MatchEntryComponent },
+    { path: 'matches/history', component: MatchHistoryComponent },
+    { path: 'profile', component: ProfileComponent },
+    { path: '', redirectTo: 'login', pathMatch: 'full' }
+];
