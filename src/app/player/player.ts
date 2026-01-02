@@ -4,7 +4,7 @@ import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../auth/auth';
 import { catchError, map } from 'rxjs/operators';
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 export interface PlayerLeague {
     id: string;
@@ -47,6 +47,9 @@ export class PlayerService {
     // Mock leagues the player is part of
     private leagues = signal<PlayerLeague[]>([]);
 
+    // All available leagues
+    private allLeagues = signal<PlayerLeague[]>([]);
+
     // Selected league ID
     selectedLeagueId = signal<string | null>(null);
 
@@ -54,8 +57,11 @@ export class PlayerService {
     // Mock upcoming matches
     private matches = signal<UpcomingMatch[]>([]);
 
-    // Computed: Get all leagues
+    // Computed: Get all leagues player is in
     getLeagues = computed(() => this.leagues());
+
+    // Computed: Get status of all available leagues
+    getAllLeagues = computed(() => this.allLeagues());
 
     // Computed: Get active leagues only
     getActiveLeagues = computed(() =>
@@ -237,6 +243,57 @@ export class PlayerService {
             }),
             catchError(err => {
                 console.error('Error updating score:', err);
+                return of(false);
+            })
+        );
+    }
+
+    fetchAllLeagues() {
+        this.http.get<any[]>('api/v1/all_leagues').pipe(
+            map(data => {
+                return data.map((l: any) => ({
+                    id: l.id || l._id || String(l.league_id) || crypto.randomUUID(),
+                    name: l.league_name || l.name || 'Unknown League',
+                    status: l.status || l.league_status || 'active',
+                    startDate: new Date(l.startDate || l.league_start_date || new Date()),
+                    endDate: new Date(l.endDate || l.league_end_date || new Date())
+                }));
+            }),
+            catchError(err => {
+                console.error('Error fetching all leagues:', err);
+                return of([]);
+            })
+        ).subscribe(leagues => {
+            this.allLeagues.set(leagues);
+        });
+    }
+
+    registerForLeague(leagueId: string): Observable<boolean> {
+        const user = this.authService.currentUser();
+        if (!user) return of(false);
+
+        alert(`Registering for league: ${leagueId}`);
+        const payload = {
+            league_id: leagueId,
+            email: user.email
+        };
+
+        // Assuming this endpoint exists based on usual patterns, or we'd use a different update mechanism
+        return this.http.post('api/v1/league/register', payload).pipe(
+            map(res => {
+                alert('Registration successful!');
+                console.log('Registration successful:', res);
+                // Refresh player leagues
+                this.fetchLeaguesForPlayer(user.email);
+                return true;
+            }),
+            catchError(err => {
+                alert('Registration failed!!!!!' + err.message);
+                console.error('Registration error:', err);
+                // Fallback: If 404, we might not have the endpoint yet, alert user
+                if (err.status === 404) {
+                    alert('Registration endpoint not found on server. Please contact admin.');
+                }
                 return of(false);
             })
         );

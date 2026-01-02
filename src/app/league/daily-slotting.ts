@@ -80,6 +80,20 @@ export class DailySlottingComponent {
 
         matchesMap.set(group.level, matches);
         sittingMap.set(group.level, [[p[4]], [p[3]], [p[0]], [p[1]], [p[2]]]);
+      } else if (group.players.length === 4) {
+        // Logic for 4 players (3 matches, no sitting)
+        const sorted = [...group.players].sort((a, b) => b.dupr_rating - a.dupr_rating);
+        const p = sorted; // Shorthand P1-P4
+
+        const matches: MatchSlot[] = [
+          { id: `g${group.level}-r1-m1`, team1: [p[0], p[1]], team2: [p[2], p[3]], time: '09:00', courtNumber: '1' }, // 1&2 vs 3&4
+          { id: `g${group.level}-r1-m2`, team1: [p[0], p[2]], team2: [p[1], p[3]], time: '09:20', courtNumber: '1' }, // 1&3 vs 2&4
+          { id: `g${group.level}-r1-m3`, team1: [p[0], p[3]], team2: [p[1], p[2]], time: '09:40', courtNumber: '1' }, // 1&4 vs 2&3
+        ];
+
+        matchesMap.set(group.level, matches);
+        // No sitting players for groups of 4
+        sittingMap.set(group.level, [[], [], []]);
       }
     });
 

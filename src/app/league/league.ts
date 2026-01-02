@@ -101,18 +101,73 @@ export class LeagueService {
     return this.players;
   }
 
-  // Core Logic: Slotting players into groups of 5 based on rating
+  // Core Logic: Slotting players into groups of 5 and 4 based on rating
   getGroups(): Group[] {
     const playersList = this.players();
-    if (playersList.length === 0) return [];
+    const totalPlayers = playersList.length;
+    if (totalPlayers === 0) return [];
 
     const sortedPlayers = [...playersList].sort((a, b) => b.dupr_rating - a.dupr_rating);
     const groups: Group[] = [];
 
-    for (let i = 0; i < sortedPlayers.length; i += 5) {
+    // Determine number of groups of 5 and 4
+    let numGroupsOf5 = 0;
+    let numGroupsOf4 = 0;
+
+    // We want to maximize groups of 5, but every group must have at least 4.
+    // Logic: Try max possible groups of 5, see if remainder is divisible by 4.
+    // If not, reduce groups of 5 by one and try again.
+
+    const maxGroupsOf5 = Math.floor(totalPlayers / 5);
+
+    for (let i = maxGroupsOf5; i >= 0; i--) {
+      const remainder = totalPlayers - (i * 5);
+      if (remainder % 4 === 0) {
+        numGroupsOf5 = i;
+        numGroupsOf4 = remainder / 4;
+        break;
+      }
+    }
+
+    // Fallback if no valid combination found (shouldn't happen for N >= 4 except maybe specific edge cases like 6, 7, 11?)
+    // If N < 4, we just put everyone in one group? Or fail? 
+    // For now assuming N is reasonable or we just dump remainder in last group if logic fails.
+    // Actually, with this logic:
+    // 6: 5*1 rem 1 (no), 5*0 rem 6 (no) -> loops finishes. 
+    // If we can't make perfect groups of 4 and 5, we might need a "remainder" group strategy, 
+    // but the requirement says "every group gets at least 4 players". 
+    // 6 players -> 1 group of 6? Or 3 and 3? (Violates >=4).
+    // Let's stick to the prompt's implied logic for valid numbers (16, 17, 18).
+    // If really stuck, just slice by 5 until end.
+
+    // Construct groups
+    let startIndex = 0;
+
+    // Groups of 5 first (Higher rated players)
+    for (let i = 0; i < numGroupsOf5; i++) {
       groups.push({
         level: groups.length + 1,
-        players: sortedPlayers.slice(i, i + 5)
+        players: sortedPlayers.slice(startIndex, startIndex + 5)
+      });
+      startIndex += 5;
+    }
+
+    // Groups of 4 next
+    for (let i = 0; i < numGroupsOf4; i++) {
+      groups.push({
+        level: groups.length + 1,
+        players: sortedPlayers.slice(startIndex, startIndex + 4)
+      });
+      startIndex += 4;
+    }
+
+    // Handle edge case where no combination worked (e.g. < 4 or specific numbers like 6, 7, 11 if strictly 4/5)
+    // If we have leftovers and no groups formed, just make one group.
+    if (groups.length === 0 && totalPlayers > 0) {
+      // Just one group with everyone
+      groups.push({
+        level: 1,
+        players: sortedPlayers
       });
     }
 

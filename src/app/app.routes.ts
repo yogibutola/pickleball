@@ -9,6 +9,7 @@ import { ProfileComponent } from './stats/profile';
 import { DashboardComponent as AdminDashboardComponent } from './admin/dashboard';
 import { CreateLeagueComponent } from './admin/create-league';
 import { PlayerDashboardComponent } from './player/player-dashboard';
+import { PlayerLeaguesComponent } from './player/player-leagues';
 import { MatchDetailComponent } from './player/match-detail';
 
 export const routes: Routes = [
@@ -17,6 +18,7 @@ export const routes: Routes = [
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'player', component: PlayerDashboardComponent },
+    { path: 'player/leagues', component: PlayerLeaguesComponent },
     { path: 'player/match/:id', component: MatchDetailComponent },
     { path: 'league', component: DashboardComponent },
     { path: 'league/slotting', component: DailySlottingComponent },
