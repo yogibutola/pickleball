@@ -17,8 +17,7 @@
             <div style="margin-top: var(--space-md);">
                 <h4 style="margin-bottom: var(--space-sm);">Active Leagues</h4>
                 @for (league of leagues(); track league.league_id) {
-                <div [routerLink]="['/league/slotting']" [queryParams]="{league_id: league.league_id}"
-                    class="flex-center interactive-card"
+                <div [routerLink]="['/admin/league', league.league_name]" class="flex-center interactive-card"
                     style="justify-content: space-between; padding: var(--space-sm); background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); margin-bottom: var(--space-xs); cursor: pointer;">
                     <span>{{ league.league_name }}</span>
                     <span

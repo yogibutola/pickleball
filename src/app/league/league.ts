@@ -23,6 +23,7 @@ export interface TeamMember {
   firstName: string;
   lastName: string;
   email: string;
+  dupr_rating?: number;
 }
 
 export interface TeamItem {
@@ -57,6 +58,21 @@ export interface LeagueRoundPayload {
   league_id: string | number;
   league_name: string;
   rounds: RoundItem[];
+}
+
+export interface LeagueDetailsPayload {
+  league_id: string | number;
+  league_name: string;
+  league_description: string;
+  league_status: 'active' | 'pending';
+  league_start_date: string;
+  league_end_date: string;
+  league_duration: string;
+  group_size: number;
+  match_format: string;
+  match_duration: string;
+  match_court_number: string;
+  players: Player[];
 }
 
 @Injectable({

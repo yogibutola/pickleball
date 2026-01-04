@@ -1,0 +1,86 @@
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.info-item label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.info-item span {
+    font-size: 1rem;
+    color: var(--color-text);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 4px 12px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.players-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+}
+
+.players-table thead {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.players-table th {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.players-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s, color 0.2s;
+}
+
+.players-table th.sortable:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-accent);
+}
+
+.players-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--color-text);
+}
+
+.players-table tbody tr {
+    transition: background 0.2s;
+}
+
+.players-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.rating-badge {
+    background: var(--color-accent);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}

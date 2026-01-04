@@ -11,10 +11,12 @@ import { CreateLeagueComponent } from './admin/create-league';
 import { PlayerDashboardComponent } from './player/player-dashboard';
 import { PlayerLeaguesComponent } from './player/player-leagues';
 import { MatchDetailComponent } from './player/match-detail';
+import { LeagueDetailsComponent } from './admin/league-details';
 
 export const routes: Routes = [
     { path: 'admin', component: AdminDashboardComponent },
     { path: 'admin/create-league', component: CreateLeagueComponent },
+    { path: 'admin/league/:league_id', component: LeagueDetailsComponent },
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'player', component: PlayerDashboardComponent },
