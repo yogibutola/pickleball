@@ -38,7 +38,7 @@ export interface MatchItem {
   match_id: string;
   team_one: TeamItem;
   team_two: TeamItem;
-  siting_player?: TeamMember;
+  siting_player?: TeamMember | null;
   time: string;
   court_number: string;
 }
@@ -91,7 +91,7 @@ export class LeagueService {
   // Fetch players from API and update signal
   fetchPlayers(leagueId?: string) {
     console.log("leagueId: " + leagueId);
-    const url = leagueId ? `api/v1/league/id/${leagueId}` : 'api/v1/players';
+    const url = leagueId ? `/api/v1/league/id/${leagueId}` : '/api/v1/players';
     console.log(url);
     this.http.get<any[]>(url).pipe(
       map(data => data.map(p => ({
@@ -115,6 +115,10 @@ export class LeagueService {
 
   getPlayers() {
     return this.players;
+  }
+
+  setPlayers(players: Player[]) {
+    this.players.set(players);
   }
 
   // Core Logic: Slotting players into groups of 5 and 4 based on rating
@@ -212,6 +216,6 @@ export class LeagueService {
 
   saveRoundData(payload: LeagueRoundPayload) {
     console.log('Saving round data:', payload);
-    return this.http.post('api/v1/league/round', payload);
+    return this.http.post('/api/v1/league/round', payload);
   }
 }

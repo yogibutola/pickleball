@@ -28,10 +28,15 @@ export class DailySlottingComponent {
   private route = inject(ActivatedRoute);
 
   leagueId = signal<string | null>(null);
-  league = computed(() => this.adminService.leagues().find(l => l.league_id === this.leagueId()));
+  league = computed(() => {
+    const id = this.leagueId();
+    if (!id) return undefined;
+    const leagues = this.adminService.leagues();
+    return leagues.find(l => l.league_id === id || l.league_name === id);
+  });
 
   currentRound = signal<1 | 2>(1);
-  slottingDate = signal<string>(new Date().toISOString().split('T')[0]);
+  slottingDate = new Date().toISOString().split('T')[0];
   collapsedGroups = signal<Set<number>>(new Set());
 
   // Per group match state
@@ -45,9 +50,6 @@ export class DailySlottingComponent {
     this.route.queryParams.subscribe(params => {
       const id = params['league_id'];
       this.leagueId.set(id);
-      if (id) {
-        this.leagueService.fetchPlayers(id);
-      }
     });
 
     // Automatically generate Round 1 when groups (players) are loaded
@@ -192,7 +194,11 @@ export class DailySlottingComponent {
 
   saveSlotting() {
     const league = this.league();
-    if (!league) return;
+    if (!league) {
+      console.error('No league found for ID/Name:', this.leagueId());
+      alert('Could not save: League information not found. Please try refreshing or going back to the league list.');
+      return;
+    }
 
     const rounds: RoundItem[] = [];
 
@@ -214,8 +220,8 @@ export class DailySlottingComponent {
           player_two: { firstName: m.team2[1].firstName || '', lastName: m.team2[1].lastName || '', email: m.team2[1].email },
           score: m.score2 || 0
         },
-        siting_player: sitting ? { firstName: sitting.firstName || '', lastName: sitting.lastName || '', email: sitting.email } : undefined,
-        time: `${this.slottingDate()}T${(m.time || '09:00')}:00`,
+        siting_player: sitting ? { firstName: sitting.firstName || '', lastName: sitting.lastName || '', email: sitting.email } : null,
+        time: `${this.slottingDate}T${(m.time || '09:00')}:00`,
         court_number: m.courtNumber || '1'
       };
     };

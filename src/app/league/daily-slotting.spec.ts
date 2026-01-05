@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { DailySlotting } from './daily-slotting';
+import { DailySlottingComponent } from './daily-slotting';
 
-describe('DailySlotting', () => {
-  let component: DailySlotting;
-  let fixture: ComponentFixture<DailySlotting>;
+describe('DailySlottingComponent', () => {
+  let component: DailySlottingComponent;
+  let fixture: ComponentFixture<DailySlottingComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [DailySlotting]
+      imports: [DailySlottingComponent]
     })
-    .compileComponents();
+      .compileComponents();
 
-    fixture = TestBed.createComponent(DailySlotting);
+    fixture = TestBed.createComponent(DailySlottingComponent);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });

@@ -30,7 +30,7 @@ export class AdminService {
   }
 
   fetchLeagues() {
-    this.http.get<any[]>('api/v1/all_leagues').subscribe({
+    this.http.get<any[]>('/api/v1/all_leagues').subscribe({
       next: (data) => {
         const mappedLeagues: League[] = data.map(l => ({
           league_id: String(l.league_id),
@@ -105,7 +105,7 @@ export class AdminService {
 
     // API Call
     console.log('Sending payload:', backendPayload);
-    this.http.post('api/v1/league', backendPayload).subscribe({
+    this.http.post('/api/v1/league', backendPayload).subscribe({
       next: (response) => console.log('League created successfully', response),
       error: (err) => {
         console.error('Error creating league', err);
