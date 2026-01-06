@@ -1,3 +1,20 @@
 <div class="app-container">
-  <router-outlet></router-outlet>
+  <header class="global-header" *ngIf="currentUser()">
+    <div class="header-content">
+      <h1 class="app-title">{{ title() }}</h1>
+      <div class="user-info">
+        <button class="toggle-theme-btn" (click)="toggleTheme()"
+          [title]="currentTheme() === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'">
+          <span *ngIf="currentTheme() === 'dark'">☀️</span>
+          <span *ngIf="currentTheme() === 'light'">🌙</span>
+        </button>
+        <span class="user-name">{{ currentUser()?.firstName }} {{ currentUser()?.lastName }}</span>
+        <button class="logout-btn" (click)="logout()">Sign Out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
 </div>

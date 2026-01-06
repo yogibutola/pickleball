@@ -14,14 +14,14 @@
 
 .info-item span {
     font-size: 1rem;
-    color: var(--color-text);
+    color: HSL(var(--color-text-main));
 }
 
 .badge {
     font-size: 0.75rem;
     padding: 4px 12px;
     border-radius: 12px;
-    color: white;
+    color: black;
     font-weight: 600;
     display: inline-block;
 }
@@ -37,7 +37,7 @@
 }
 
 .players-table thead {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--card-border);
 }
 
 .players-table th {
@@ -48,7 +48,7 @@
     text-transform: uppercase;
     font-weight: 600;
     letter-spacing: 0.5px;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    border-bottom: 2px solid var(--card-border);
 }
 
 .players-table th.sortable {
@@ -58,14 +58,14 @@
 }
 
 .players-table th.sortable:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: var(--color-accent);
+    background: var(--card-border);
+    color: HSL(var(--color-primary));
 }
 
 .players-table td {
     padding: var(--space-sm) var(--space-md);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    color: var(--color-text);
+    border-bottom: 1px solid var(--card-border);
+    color: HSL(var(--color-text-main));
 }
 
 .players-table tbody tr {
@@ -73,12 +73,12 @@
 }
 
 .players-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--card-border);
 }
 
 .rating-badge {
-    background: var(--color-accent);
-    color: white;
+    background: HSL(var(--color-accent));
+    color: black;
     padding: 2px 8px;
     border-radius: 8px;
     font-size: 0.85rem;

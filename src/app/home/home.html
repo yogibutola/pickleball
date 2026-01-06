@@ -1,0 +1,91 @@
+<div class="home-container">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-content fade-in-up">
+            <h1 class="hero-title text-gradient">Elevate Your Pickleball Experience</h1>
+            <p class="hero-subtitle">
+                The ultimate platform for league management, automated slotting, and real-time player statistics.
+            </p>
+        </div>
+
+        <!-- Image Carousel -->
+        <div class="carousel-container fade-in-up" style="animation-delay: 0.2s;">
+            <div class="carousel-track" [style.transform]="'translateX(-' + (currentSlide * 100) + '%)'">
+                <div class="carousel-slide" *ngFor="let image of images">
+                    <img [src]="image.src" [alt]="image.alt">
+                    <div class="slide-caption">
+                        <h3>{{ image.title }}</h3>
+                        <p>{{ image.caption }}</p>
+                        <a [routerLink]="image.link" class="btn btn-primary carousel-action-btn">{{ image.buttonText
+                            }}</a>
+                    </div>
+                </div>
+            </div>
+
+            <button class="carousel-btn prev" (click)="prevSlide()">❮</button>
+            <button class="carousel-btn next" (click)="nextSlide()">❯</button>
+
+            <div class="carousel-indicators">
+                <span *ngFor="let img of images; let i = index" [class.active]="i === currentSlide"
+                    (click)="setSlide(i)"></span>
+            </div>
+        </div>
+
+        <!-- Decorative Background Elements -->
+        <div class="bg-blur blur-1"></div>
+        <div class="bg-blur blur-2"></div>
+    </section>
+
+    <!-- Features Grid -->
+    <section class="features-section">
+        <h2 class="section-title">Everything You Need to Run Your League</h2>
+
+        <div class="features-grid">
+            <!-- League Management -->
+            <div class="feature-card">
+                <div class="icon-wrapper">
+                    🏆
+                </div>
+                <h3>League Management</h3>
+                <p>Effortlessly organize leagues, manage groups, and track seasons with our intuitive admin dashboard.
+                </p>
+            </div>
+
+            <!-- Smart Slotting -->
+            <div class="feature-card">
+                <div class="icon-wrapper">
+                    🤖
+                </div>
+                <h3>Smart Slotting</h3>
+                <p>Say goodbye to manual scheduling. Our automated algorithm creates fair and balanced matches for every
+                    round.</p>
+            </div>
+
+            <!-- Player Stats -->
+            <div class="feature-card">
+                <div class="icon-wrapper">
+                    📊
+                </div>
+                <h3>Advanced Statistics</h3>
+                <p>Track DUPR ratings, win rates, and match history to visualize your progress and improvement.</p>
+            </div>
+
+            <!-- Match History -->
+            <div class="feature-card">
+                <div class="icon-wrapper">
+                    📝
+                </div>
+                <h3>Match History</h3>
+                <p>Keep a detailed record of every game played, complete with scores, partners, and opponents.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Multi-Language Banner -->
+    <section class="multilang-banner-section">
+        <div class="banner-container">
+            <img src="/assets/images/pickleball_footer_banner_v3.png" alt="Pickleball in many languages"
+                class="multilang-banner">
+        </div>
+    </section>
+</div>

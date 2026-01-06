@@ -12,9 +12,12 @@ import { PlayerDashboardComponent } from './player/player-dashboard';
 import { PlayerLeaguesComponent } from './player/player-leagues';
 import { MatchDetailComponent } from './player/match-detail';
 import { LeagueDetailsComponent } from './admin/league-details';
+import { AdminLoginComponent } from './admin/admin-login';
+import { HomeComponent } from './home/home';
 
 export const routes: Routes = [
     { path: 'admin', component: AdminDashboardComponent },
+    { path: 'admin/login', component: AdminLoginComponent },
     { path: 'admin/create-league', component: CreateLeagueComponent },
     { path: 'admin/league/:league_id', component: LeagueDetailsComponent },
     { path: 'login', component: LoginComponent },
@@ -27,5 +30,5 @@ export const routes: Routes = [
     { path: 'matches/entry', component: MatchEntryComponent },
     { path: 'matches/history', component: MatchHistoryComponent },
     { path: 'profile', component: ProfileComponent },
-    { path: '', redirectTo: 'login', pathMatch: 'full' }
+    { path: '', component: HomeComponent }
 ];

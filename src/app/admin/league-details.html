@@ -7,7 +7,7 @@
             </h2>
             @if (leagueDetails(); as league) {
             <span class="badge"
-                [style.background]="league.league_status === 'active' ? 'var(--color-success)' : 'var(--color-warning)'">
+                [style.background]="league.league_status === 'active' ? 'HSL(var(--color-success))' : 'HSL(var(--color-warning))'">
                 {{ league.league_status }}
             </span>
             }
@@ -15,7 +15,7 @@
         <div class="flex-center gap-md">
             @if (leagueDetails()) {
             <a [routerLink]="['/league/slotting']" [queryParams]="{league_id: leagueId()}" class="btn btn-primary"
-                style="background: var(--color-success);">
+                style="background: HSL(var(--color-success));">
                 Slot Round 1 Games
             </a>
             }
@@ -75,7 +75,7 @@
         <div class="card">
             <div class="flex-center" style="justify-content: space-between; margin-bottom: var(--space-md);">
                 <h3 style="margin: 0;">Registered Players</h3>
-                <span class="badge" style="background: var(--color-accent);">
+                <span class="badge" style="background: HSL(var(--color-accent)); color: black;">
                     {{ sortedPlayers().length }} players
                 </span>
             </div>

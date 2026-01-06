@@ -1,22 +1,12 @@
 /* Global Styles & Design System */
 :root {
-  /* HSL Color Palette - Pickleball Theme */
+  /* Constant Variables (Same in both themes) */
   --color-primary: 150 100% 35%;
-  /* Vibrant Green */
   --color-primary-dark: 150 100% 25%;
   --color-secondary: 210 100% 50%;
-  /* Electric Blue */
   --color-accent: 45 100% 50%;
-  /* Golden Yellow */
-
-  --color-bg-dark: 220 20% 10%;
-  /* Deep dark blue/gray */
-  --color-bg-card: 220 15% 15%;
-  /* Slightly lighter for cards */
-  --color-text-main: 0 0% 100%;
-  --color-text-muted: 220 10% 70%;
-
   --color-success: 140 60% 50%;
+  --color-warning: 35 100% 55%;
   --color-error: 0 70% 60%;
 
   /* Spacing */
@@ -33,6 +23,40 @@
 
   /* Transitions */
   --transition-fast: 0.2s ease;
+
+  /* Header Variable (Special case for glassmorphism contrast) */
+  --header-bg: rgba(15, 23, 42, 0.7);
+  --header-border: rgba(255, 255, 255, 0.05);
+}
+
+/* Default Theme (Dark) */
+:root,
+[data-theme="dark"] {
+  --color-bg-dark: 220 20% 10%;
+  --color-bg-card: 220 15% 15%;
+  --color-text-main: 0 0% 100%;
+  --color-text-muted: 220 10% 70%;
+  --header-bg: rgba(15, 23, 42, 0.7);
+  --header-border: rgba(255, 255, 255, 0.05);
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --card-border: rgba(255, 255, 255, 0.05);
+  --input-bg: rgba(0, 0, 0, 0.2);
+}
+
+/* Light Theme Overrides */
+[data-theme="light"] {
+  --color-bg-dark: 210 40% 98%;
+  /* Very light blue-ish gray */
+  --color-bg-card: 0 0% 100%;
+  /* Pure white */
+  --color-text-main: 220 40% 15%;
+  /* Deep gray/blue for text */
+  --color-text-muted: 215 15% 45%;
+  --header-bg: rgba(255, 255, 255, 0.8);
+  --header-border: rgba(0, 0, 0, 0.05);
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+  --card-border: rgba(0, 0, 0, 0.04);
+  --input-bg: rgba(255, 255, 255, 1);
 }
 
 body {
@@ -87,22 +111,23 @@ body {
 }
 
 .btn-secondary {
-  background-color: transparent;
-  border: 1px solid HSL(var(--color-text-muted));
+  background-color: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--card-border);
   color: HSL(var(--color-text-main));
 }
 
 .btn-secondary:hover {
   border-color: HSL(var(--color-primary));
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
 }
 
 .card {
   background-color: HSL(var(--color-bg-card));
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: var(--card-shadow);
+  border: 1px solid var(--card-border);
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -125,13 +150,12 @@ body {
 .input-field {
   width: 100%;
   padding: var(--space-md);
-  background-color: rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--input-bg);
+  border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
-  color: white;
+  color: HSL(var(--color-text-main));
   font-size: 1rem;
   box-sizing: border-box;
-  /* Fix for width 100% padding issue */
 }
 
 .input-field:focus {
@@ -142,5 +166,6 @@ body {
 .text-gradient {
   background: linear-gradient(to right, HSL(var(--color-primary)), HSL(var(--color-secondary)));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
