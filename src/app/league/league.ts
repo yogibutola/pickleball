@@ -38,7 +38,7 @@ export interface MatchItem {
   match_id: string;
   team_one: TeamItem;
   team_two: TeamItem;
-  siting_player?: TeamMember | null;
+  siting_player?: TeamMember;
   time: string;
   court_number: string;
 }

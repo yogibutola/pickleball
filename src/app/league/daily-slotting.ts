@@ -204,26 +204,39 @@ export class DailySlottingComponent {
 
     const mapToMatchItem = (m: MatchSlot, level: number, index: number): MatchItem => {
       const sitting = this.getSittingPlayer(level, index);
-      return {
+
+      const mapPlayer = (p: Player) => ({
+        firstName: p.firstName || '',
+        lastName: p.lastName || '',
+        email: p.email || ''
+      });
+
+      const matchItem: MatchItem = {
         match_id: m.id,
         team_one: {
           team_id: `${m.id}-t1`,
           team_name: 'Team 1',
-          player_one: { firstName: m.team1[0].firstName || '', lastName: m.team1[0].lastName || '', email: m.team1[0].email },
-          player_two: { firstName: m.team1[1].firstName || '', lastName: m.team1[1].lastName || '', email: m.team1[1].email },
+          player_one: mapPlayer(m.team1[0]),
+          player_two: mapPlayer(m.team1[1]),
           score: m.score1 || 0
         },
         team_two: {
           team_id: `${m.id}-t2`,
           team_name: 'Team 2',
-          player_one: { firstName: m.team2[0].firstName || '', lastName: m.team2[0].lastName || '', email: m.team2[0].email },
-          player_two: { firstName: m.team2[1].firstName || '', lastName: m.team2[1].lastName || '', email: m.team2[1].email },
+          player_one: mapPlayer(m.team2[0]),
+          player_two: mapPlayer(m.team2[1]),
           score: m.score2 || 0
         },
-        siting_player: sitting ? { firstName: sitting.firstName || '', lastName: sitting.lastName || '', email: sitting.email } : null,
         time: `${this.slottingDate}T${(m.time || '09:00')}:00`,
         court_number: m.courtNumber || '1'
       };
+
+      if (sitting) {
+        matchItem.siting_player = mapPlayer(sitting);
+      }
+
+      return matchItem;
+
     };
 
     // Round 1
