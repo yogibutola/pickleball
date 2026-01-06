@@ -13,13 +13,16 @@ import { PlayerLeaguesComponent } from './player/player-leagues';
 import { MatchDetailComponent } from './player/match-detail';
 import { LeagueDetailsComponent } from './admin/league-details';
 import { AdminLoginComponent } from './admin/admin-login';
+import { ClubSignupComponent } from './admin/club-signup';
 import { HomeComponent } from './home/home';
+import { adminGuard } from './auth/admin.guard';
 
 export const routes: Routes = [
-    { path: 'admin', component: AdminDashboardComponent },
+    { path: 'admin', component: AdminDashboardComponent, canActivate: [adminGuard] },
     { path: 'admin/login', component: AdminLoginComponent },
-    { path: 'admin/create-league', component: CreateLeagueComponent },
-    { path: 'admin/league/:league_id', component: LeagueDetailsComponent },
+    { path: 'admin/signup', component: ClubSignupComponent },
+    { path: 'admin/create-league', component: CreateLeagueComponent, canActivate: [adminGuard] },
+    { path: 'admin/league/:league_id', component: LeagueDetailsComponent, canActivate: [adminGuard] },
     { path: 'login', component: LoginComponent },
     { path: 'signup', component: SignupComponent },
     { path: 'player', component: PlayerDashboardComponent },

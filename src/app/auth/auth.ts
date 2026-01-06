@@ -11,6 +11,8 @@ export interface User {
   userName: string;
   email: string;
   dupr_rating: number;
+  role?: 'player' | 'admin';
+  token?: string;
 }
 
 @Injectable({
@@ -28,7 +30,20 @@ export class AuthService {
     if (isPlatformBrowser(this.platformId)) {
       const stored = localStorage.getItem('pickleball_user');
       if (stored) {
-        this.currentUser.set(JSON.parse(stored));
+        try {
+          const user = JSON.parse(stored);
+          // Validate token existence. If missing (stale session), clear it.
+          if (user && user.token) {
+            this.currentUser.set(user);
+          } else {
+            console.warn('Found stale user session without token. Clearing session.');
+            localStorage.removeItem('pickleball_user');
+            this.currentUser.set(null);
+          }
+        } catch (e) {
+          console.error('Error parsing stored user:', e);
+          localStorage.removeItem('pickleball_user');
+        }
       }
     }
   }
@@ -53,7 +68,9 @@ export class AuthService {
           lastName: response.lastName || '',
           userName: response.userName || '',
           email: response.email || email,
-          dupr_rating: response.dupr_rating || 0
+          dupr_rating: response.dupr_rating || 0,
+          role: response.role || 'player',
+          token: response.token
         };
 
         this.currentUser.set(user);
@@ -90,7 +107,8 @@ export class AuthService {
       userName: username,
       email: email,
       password: password.slice(0, 72), // Truncate to 72 bytes for bcrypt
-      dupr_rating: duprRating
+      dupr_rating: duprRating,
+      role: 'player' // Default role for new signups
     };
 
     console.log('Sending signup request:', signupPayload);
@@ -107,7 +125,9 @@ export class AuthService {
           lastName: lastName,
           userName: username,
           email,
-          dupr_rating: duprRating
+          dupr_rating: duprRating,
+          role: response.role || 'player',
+          token: response.token
         };
 
         // Update current user
@@ -151,6 +171,14 @@ export class AuthService {
     return true;
   }
 
+  getToken(): string | undefined {
+    return this.currentUser()?.token;
+  }
+
+  isAdmin(): boolean {
+    return this.currentUser()?.role === 'admin';
+  }
+
   // Observable-based signup that returns result for proper async handling
   signupObservable(firstName: string, lastName: string, email: string, password: string, duprRating: number): Observable<boolean> {
     const username = `${firstName.toLowerCase()}.${lastName.toLowerCase()}`;
@@ -176,7 +204,9 @@ export class AuthService {
           lastName: lastName,
           userName: username,
           email,
-          dupr_rating: duprRating
+          dupr_rating: duprRating,
+          role: response.role || 'player',
+          token: response.token
         };
 
         this.currentUser.set(user);
@@ -213,6 +243,59 @@ export class AuthService {
         }
 
         alert('Error during signup: ' + errorMessage);
+        return of(false);
+      })
+    );
+  }
+
+  // Club Signup
+  signupClubObservable(clubName: string, email: string, password: string, address: string, phone: string): Observable<boolean> {
+    const payload = {
+      clubName,
+      email,
+      password,
+      address,
+      phone
+    };
+
+    console.log('Sending club signup request:', payload);
+
+    return this.http.post<any>('api/v1/signup/club', payload).pipe(
+      tap((response) => {
+        console.log('Club signup successful:', response);
+
+        const user: User = {
+          id: response.id || crypto.randomUUID(),
+          firstName: clubName, // Map clubName to firstName as per requirement
+          lastName: '',
+          userName: `admin.${clubName.toLowerCase().replace(/\s+/g, '')}`,
+          email,
+          dupr_rating: 0,
+          role: 'admin', // Club signup always results in admin role
+          token: response.token
+        };
+
+        this.currentUser.set(user);
+
+        if (isPlatformBrowser(this.platformId)) {
+          localStorage.setItem('pickleball_user', JSON.stringify(user));
+        }
+      }),
+      map(() => true),
+      catchError((err) => {
+        console.error('Club signup error:', err);
+        let errorMessage = 'Signup failed.';
+
+        if (err.error?.detail) {
+          if (typeof err.error.detail === 'string') {
+            errorMessage = err.error.detail;
+          } else if (Array.isArray(err.error.detail)) {
+            errorMessage = err.error.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ');
+          } else if (typeof err.error.detail === 'object') {
+            errorMessage = JSON.stringify(err.error.detail);
+          }
+        }
+        alert('Error during club signup: ' + errorMessage);
         return of(false);
       })
     );
