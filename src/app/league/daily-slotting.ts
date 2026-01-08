@@ -1,8 +1,9 @@
 import { Component, computed, signal, inject, effect, Injector } from '@angular/core';
 import { RouterLink, ActivatedRoute } from '@angular/router';
-import { LeagueService, Player, LeagueRoundPayload, RoundItem, GroupItem, MatchItem, TeamItem, TeamMember } from './league';
+import { LeagueService, Player, LeagueRoundPayload, RoundItem, GroupItem, MatchItem, TeamItem, TeamMember, LeagueDetailsPayload } from './league';
 import { AdminService } from '../admin/admin';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 
 interface MatchSlot {
@@ -26,6 +27,7 @@ export class DailySlottingComponent {
   private leagueService = inject(LeagueService);
   private adminService = inject(AdminService);
   private route = inject(ActivatedRoute);
+  private http = inject(HttpClient);
 
   leagueId = signal<string | null>(null);
   league = computed(() => {
@@ -50,6 +52,9 @@ export class DailySlottingComponent {
     this.route.queryParams.subscribe(params => {
       const id = params['league_id'];
       this.leagueId.set(id);
+      if (id) {
+        this.fetchExistingSlotting(id);
+      }
     });
 
     // Automatically generate Round 1 when groups (players) are loaded
@@ -202,7 +207,7 @@ export class DailySlottingComponent {
 
     const rounds: RoundItem[] = [];
 
-    const mapToMatchItem = (m: MatchSlot, level: number, index: number): MatchItem => {
+    const mapToMatchItem = (m: MatchSlot, level: number, index: number, roundId: string, groupId: string): MatchItem => {
       const sitting = this.getSittingPlayer(level, index);
 
       const mapPlayer = (p: Player) => ({
@@ -213,6 +218,10 @@ export class DailySlottingComponent {
 
       const matchItem: MatchItem = {
         match_id: m.id,
+        league_id: league.league_id,
+        league_name: league.league_name,
+        round_id: roundId,
+        group_id: groupId,
         team_one: {
           team_id: `${m.id}-t1`,
           team_name: 'Team 1',
@@ -244,10 +253,11 @@ export class DailySlottingComponent {
     if (r1.size > 0) {
       const groups: GroupItem[] = [];
       for (const [level, matches] of r1) {
+        const groupId = `G${level}`;
         groups.push({
-          group_id: `G${level}`,
+          group_id: groupId,
           group_name: `Group ${level}`,
-          match: matches.map((m, i) => mapToMatchItem(m, level, i))
+          match: matches.map((m, i) => mapToMatchItem(m, level, i, 'R1', groupId))
         });
       }
       rounds.push({ round_id: 'R1', group: groups });
@@ -258,10 +268,11 @@ export class DailySlottingComponent {
     if (r2.size > 0) {
       const groups: GroupItem[] = [];
       for (const [level, matches] of r2) {
+        const groupId = `G${level}`;
         groups.push({
-          group_id: `G${level}`,
+          group_id: groupId,
           group_name: `Group ${level}`,
-          match: matches.map((m, i) => mapToMatchItem(m, level, i))
+          match: matches.map((m, i) => mapToMatchItem(m, level, i, 'R2', groupId))
         });
       }
       rounds.push({ round_id: 'R2', group: groups });
@@ -281,5 +292,70 @@ export class DailySlottingComponent {
         alert('Error saving slotting: ' + JSON.stringify(err.error));
       }
     });
+  }
+
+  fetchExistingSlotting(leagueId: string) {
+    this.http.get<LeagueDetailsPayload>(`/api/v1/league/name/${leagueId}`).subscribe({
+      next: (data) => {
+        // Ensure LeagueService has the correct players for this league
+        if (data.players) {
+          this.leagueService.setPlayers(data.players);
+        }
+
+        if (data.rounds && data.rounds.length > 0) {
+          const r1 = data.rounds.find(r => r.round_id === 'R1');
+          const r2 = data.rounds.find(r => r.round_id === 'R2');
+
+          if (r1) {
+            const m1Map = new Map<number, MatchSlot[]>();
+            const s1Map = new Map<number, Player[][]>();
+
+            r1.group.forEach((g: GroupItem) => {
+              const level = parseInt(g.group_id.replace('G', ''));
+              const matches: MatchSlot[] = g.match.map((m: MatchItem) => ({
+                id: m.match_id,
+                team1: [this.findPlayer(m.team_one.player_one.email), this.findPlayer(m.team_one.player_two.email)].filter(Boolean) as Player[],
+                team2: [this.findPlayer(m.team_two.player_one.email), this.findPlayer(m.team_two.player_two.email)].filter(Boolean) as Player[],
+                score1: m.team_one.score,
+                score2: m.team_two.score,
+                time: m.time.split('T')[1]?.substring(0, 5) || '09:00',
+                courtNumber: m.court_number
+              }));
+              m1Map.set(level, matches);
+
+              const sitting = g.match.map((m: MatchItem) => m.siting_player ? [this.findPlayer(m.siting_player.email)].filter(Boolean) as Player[] : []);
+              s1Map.set(level, sitting);
+            });
+
+            this.round1Matches.set(m1Map);
+            this.sittingPlayers.set(s1Map);
+          }
+
+          if (r2) {
+            const m2Map = new Map<number, MatchSlot[]>();
+            r2.group.forEach((g: GroupItem) => {
+              const level = parseInt(g.group_id.replace('G', ''));
+              const matches: MatchSlot[] = g.match.map((m: MatchItem) => ({
+                id: m.match_id,
+                team1: [this.findPlayer(m.team_one.player_one.email), this.findPlayer(m.team_one.player_two.email)].filter(Boolean) as Player[],
+                team2: [this.findPlayer(m.team_two.player_one.email), this.findPlayer(m.team_two.player_two.email)].filter(Boolean) as Player[],
+                score1: m.team_one.score,
+                score2: m.team_two.score,
+                time: m.time.split('T')[1]?.substring(0, 5) || '11:00',
+                courtNumber: m.court_number
+              }));
+              m2Map.set(level, matches);
+            });
+            this.round2Matches.set(m2Map);
+            this.currentRound.set(2);
+          }
+        }
+      },
+      error: (err) => console.error('Error fetching existing slotting:', err)
+    });
+  }
+
+  private findPlayer(email: string): Player | undefined {
+    return this.leagueService.getPlayers()().find(p => p.email === email);
   }
 }

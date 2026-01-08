@@ -175,7 +175,7 @@ export class PlayerService {
                                 console.log('Found match for user:', match.match_id);
                                 // Map to UpcomingMatch
                                 newMatches.push({
-                                    id: match.match_id,
+                                    id: match._id || match.match_id,
                                     leagueId: leagueId, // Use passed ID instead of relying on details
                                     leagueName: details.league_name,
                                     date: new Date(), // Date not in payload yet, defaulting
@@ -224,16 +224,14 @@ export class PlayerService {
         return this.currentPlayerId();
     }
 
-    updateMatchScore(matchId: string, score1: number, score2: number, leagueName: string, roundId: string, groupId: string) {
+    updateMatchScore(matchId: string, score1: number, score2: number) {
         console.log(`Sending score update for ${matchId}: ${score1} - ${score2}`);
 
         const payload = {
             match_id: matchId,
             score_team_1: score1,
             score_team_2: score2,
-            league_name: leagueName,
-            round_id: roundId,
-            group_id: groupId
+            match_status: 'completed'
         };
 
         return this.http.post('api/v1/league/match/score', payload).pipe(
@@ -272,7 +270,7 @@ export class PlayerService {
         const user = this.authService.currentUser();
         if (!user) return of(false);
 
-        alert(`Registering for league: ${leagueId}`);
+        // alert(`Registering for league: ${leagueId}`);
         const payload = {
             league_id: leagueId,
             email: user.email
@@ -281,7 +279,7 @@ export class PlayerService {
         // Assuming this endpoint exists based on usual patterns, or we'd use a different update mechanism
         return this.http.post('api/v1/league/register', payload).pipe(
             map(res => {
-                alert('Registration successful!');
+                // alert('Registration successful!');
                 console.log('Registration successful:', res);
                 // Refresh player leagues
                 this.fetchLeaguesForPlayer(user.email);

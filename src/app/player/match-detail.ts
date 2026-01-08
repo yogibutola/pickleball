@@ -74,12 +74,7 @@ export class MatchDetailComponent implements OnInit {
 
         console.log(`Submitting score for match ${matchId}: ${t1} - ${t2}`);
 
-        // Ensure we have necessary metadata
-        const leagueName = m.leagueName || '';
-        const roundId = m.roundId || '';
-        const groupId = m.groupId || '';
-
-        this.playerService.updateMatchScore(matchId, t1, t2, leagueName, roundId, groupId).subscribe(success => {
+        this.playerService.updateMatchScore(matchId, t1, t2).subscribe(success => {
             if (success) {
                 this.isScoring.set(false);
                 alert('Score submitted successfully!');

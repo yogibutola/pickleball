@@ -28,9 +28,11 @@ export class PlayerLeaguesComponent implements OnInit {
         if (confirm('Are you sure you want to register for this league?')) {
             this.playerService.registerForLeague(leagueId).subscribe(success => {
                 if (success) {
-                    alert('Successfully registered!');
+                    console.log('Successfully registered!');
+                    // alert('Successfully registered!');
                 } else {
-                    alert('Registration failed. Please try again or contact support.');
+                    console.log('Registration failed. Please try again or contact support.');
+                    // alert('Registration failed. Please try again or contact support.');
                 }
             });
         }

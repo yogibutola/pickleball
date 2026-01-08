@@ -36,6 +36,11 @@ export interface TeamItem {
 
 export interface MatchItem {
   match_id: string;
+  _id?: string;
+  league_id: string | number;
+  league_name: string;
+  round_id: string;
+  group_id: string;
   team_one: TeamItem;
   team_two: TeamItem;
   siting_player?: TeamMember;
@@ -73,6 +78,7 @@ export interface LeagueDetailsPayload {
   match_duration: string;
   match_court_number: string;
   players: Player[];
+  rounds?: RoundItem[];
 }
 
 @Injectable({
@@ -83,13 +89,20 @@ export class LeagueService {
 
   // Signal for players, initially empty
   private players = signal<Player[]>([]);
+  private isLeagueSpecific = false;
 
   constructor() {
     this.fetchPlayers();
   }
 
   // Fetch players from API and update signal
-  fetchPlayers(leagueId?: string) {
+  fetchPlayers(leagueId?: string, force = false) {
+    // If we already have league-specific players and this is a general fetch, skip unless forced
+    if (this.isLeagueSpecific && !leagueId && !force) {
+      console.log('Skipping global player fetch: already have league-specific players');
+      return;
+    }
+
     console.log("leagueId: " + leagueId);
     const url = leagueId ? `/api/v1/league/id/${leagueId}` : '/api/v1/players';
     console.log(url);
@@ -110,6 +123,7 @@ export class LeagueService {
       })
     ).subscribe(players => {
       this.players.set(players);
+      this.isLeagueSpecific = !!leagueId;
     });
   }
 
@@ -119,6 +133,7 @@ export class LeagueService {
 
   setPlayers(players: Player[]) {
     this.players.set(players);
+    this.isLeagueSpecific = true;
   }
 
   // Core Logic: Slotting players into groups of 5 and 4 based on rating

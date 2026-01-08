@@ -2,7 +2,7 @@ import { Component, signal, computed, inject, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
-import { LeagueDetailsPayload, LeagueRoundPayload, LeagueService, Player } from '../league/league';
+import { LeagueDetailsPayload, LeagueRoundPayload, LeagueService, Player, RoundItem } from '../league/league';
 
 interface LeagueDetails {
     league_id: string;
@@ -12,6 +12,7 @@ interface LeagueDetails {
     league_end_date: string;
     league_duration: string;
     players: Player[];
+    rounds?: RoundItem[];
 }
 
 @Component({
@@ -65,6 +66,12 @@ export class LeagueDetailsComponent {
         return players;
     });
 
+    isRound1Slotted = computed(() => {
+        const details = this.leagueDetails();
+        if (!details || !details.rounds) return false;
+        return details.rounds.some(r => r.round_id === 'R1');
+    });
+
     constructor() {
         // Get league ID from route params
         this.route.params.subscribe(params => {
@@ -90,6 +97,7 @@ export class LeagueDetailsComponent {
         // We'll use the league_id as the league_name for the API call
         // This assumes the league_id in the route is actually the league_name
 
+        alert("Leage ID: " + leagueId);
         this.http.get<LeagueDetailsPayload>(`/api/v1/league/name/${leagueId}`).subscribe({
             next: (data) => {
                 // Transform the response to LeagueDetails format
@@ -100,7 +108,8 @@ export class LeagueDetailsComponent {
                     league_start_date: data.league_start_date,
                     league_end_date: data.league_end_date,
                     league_duration: data.league_duration,
-                    players: data.players
+                    players: data.players,
+                    rounds: data.rounds
                 };
 
                 // Populate LeagueService with players for slotting

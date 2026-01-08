@@ -14,6 +14,13 @@
         </div>
         <div class="flex-center gap-md">
             @if (leagueDetails()) {
+            <!-- <a [routerLink]="isRound1Slotted() ? null : ['/league/slotting']"
+                [queryParams]="isRound1Slotted() ? null : {league_id: leagueId()}" class="btn btn-primary"
+                [class.disabled]="isRound1Slotted()" [title]="isRound1Slotted() ? 'Round 1 is already slotted' : ''"
+                style="background: HSL(var(--color-success));">
+                {{ isRound1Slotted() ? 'Round 1 Slotted' : 'Slot Round 1 Games' }}
+            </a> -->
+
             <a [routerLink]="['/league/slotting']" [queryParams]="{league_id: leagueId()}" class="btn btn-primary"
                 style="background: HSL(var(--color-success));">
                 Slot Round 1 Games
