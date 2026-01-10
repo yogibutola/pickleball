@@ -25,10 +25,18 @@ export class MatchDetailComponent implements OnInit {
     team2Score = signal<number | null>(null); // Opponent Team
 
     ngOnInit() {
+        this.loadMatchData();
+    }
+
+    private loadMatchData() {
         const matchId = this.route.snapshot.paramMap.get('id');
         if (matchId) {
             const foundMatch = this.playerService.getMatchById(matchId);
             this.match.set(foundMatch);
+            if (foundMatch) {
+                this.team1Score.set(foundMatch.team1Score ?? null);
+                this.team2Score.set(foundMatch.team2Score ?? null);
+            }
         }
     }
 
@@ -72,13 +80,21 @@ export class MatchDetailComponent implements OnInit {
             return;
         }
 
-        console.log(`Submitting score for match ${matchId}: ${t1} - ${t2}`);
+        console.log(`Submitting score for match ${matchId} in league ${m.leagueId}: ${t1} - ${t2}`);
 
-        this.playerService.updateMatchScore(matchId, t1, t2).subscribe(success => {
+        this.playerService.updateMatchScore(m.leagueId, matchId, t1, t2).subscribe(success => {
             if (success) {
                 this.isScoring.set(false);
                 alert('Score submitted successfully!');
-                // Ideally reload match details here
+
+                // Update local match state if possible
+                const currentMatch = this.match();
+                if (currentMatch) {
+                    currentMatch.status = 'completed';
+                    currentMatch.team1Score = t1;
+                    currentMatch.team2Score = t2;
+                    this.match.set({ ...currentMatch });
+                }
             } else {
                 alert('Failed to submit score. Please try again.');
             }

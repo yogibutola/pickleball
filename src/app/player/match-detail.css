@@ -202,6 +202,54 @@
     font-size: 1.2rem;
     color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.vs-circle.completed {
+    width: 100px;
+    height: 40px;
+    border-radius: 20px;
+    font-size: 1.4rem;
+    letter-spacing: 2px;
+}
+
+.winner {
+    background-color: HSL(var(--color-success) / 0.05) !important;
+    border-left-color: HSL(var(--color-success)) !important;
+    box-shadow: 0 0 20px HSL(var(--color-success) / 0.1);
+}
+
+.final-score-display {
+    padding: var(--space-xs) var(--space-md);
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--color-text-muted);
+}
+
+.winner .score-value {
+    color: HSL(var(--color-success));
+}
+
+.completed-msg {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    background-color: HSL(var(--color-success) / 0.1);
+    color: HSL(var(--color-success));
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    border: 1px solid HSL(var(--color-success) / 0.3);
+}
+
+.completed-msg .icon {
+    font-size: 1.2rem;
 }
 
 /* Action Section */

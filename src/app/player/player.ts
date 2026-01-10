@@ -34,7 +34,8 @@ export interface UpcomingMatch {
     // Additional fields from API
     roundId?: string;
     groupId?: string;
-    score?: number;
+    team1Score?: number;
+    team2Score?: number;
 }
 
 @Injectable({
@@ -64,19 +65,40 @@ export class PlayerService {
     getAllLeagues = computed(() => this.allLeagues());
 
     // Computed: Get active leagues only
-    getActiveLeagues = computed(() =>
-        this.leagues().filter(l => l.status === 'active' || l.status === 'upcoming')
-    );
+    getActiveLeagues = computed(() => {
+        const leagues = this.leagues();
+        console.log('getActiveLeagues computed triggered, leagues count:', leagues.length);
+        return leagues.filter(l => l.status === 'active' || l.status === 'upcoming');
+    });
 
-    // Computed: Get matches filtered by selected league
+    // Computed: Get matches filtered by selected league (Upcoming only)
     getUpcomingMatches = computed(() => {
         const selectedId = this.selectedLeagueId();
+        const allMatches = this.matches();
+        console.log(`getUpcomingMatches computed: selectedLeagueId=${selectedId}, TotalMatches=${allMatches.length}`);
+
+        const matches = allMatches.filter(m => m.status !== 'completed');
         if (!selectedId) {
-            return this.matches().filter(m => m.status === 'upcoming');
+            return matches;
         }
-        return this.matches().filter(
-            m => m.leagueId === selectedId && m.status === 'upcoming'
-        );
+        const filtered = matches.filter(m => String(m.leagueId) === String(selectedId));
+        console.log(`getUpcomingMatches: returning ${filtered.length} matches`);
+        return filtered;
+    });
+
+    // Computed: Get completed matches filtered by selected league
+    getCompletedMatches = computed(() => {
+        const selectedId = this.selectedLeagueId();
+        const allMatches = this.matches();
+        console.log(`getCompletedMatches computed: selectedLeagueId=${selectedId}, TotalMatches=${allMatches.length}`);
+
+        const matches = allMatches.filter(m => m.status === 'completed');
+        if (!selectedId) {
+            return matches;
+        }
+        const filtered = matches.filter(m => String(m.leagueId) === String(selectedId));
+        console.log(`getCompletedMatches: returning ${filtered.length} matches`);
+        return filtered;
     });
 
     // Computed: Get selected league
@@ -94,9 +116,11 @@ export class PlayerService {
         effect(() => {
             const user = this.authService.currentUser();
             if (user?.email) {
+                this.currentPlayerId.set(user.email);
                 this.fetchLeaguesForPlayer(user.email);
             } else {
                 this.leagues.set([]);
+                this.currentPlayerId.set('1');
             }
         });
     }
@@ -106,114 +130,188 @@ export class PlayerService {
             map(data => {
                 console.log('Player leagues API response:', data);
                 if (!data) return [];
-                // Handle response if it's not an array (e.g. wrapped in an object or just a single object)
                 const leaguesList = Array.isArray(data) ? data : (data.leagues || (data.data ? data.data : []));
 
                 return leaguesList.map((l: any) => ({
-                    id: l.id || l._id || l.league_id || crypto.randomUUID(),
+                    id: String(l.id || l._id || l.league_id || crypto.randomUUID()),
                     name: l.league_name || l.name || 'Unknown League',
-                    status: l.status || l.league_status || 'active',
+                    status: (l.status || l.league_status || 'active').toLowerCase(),
                     startDate: new Date(l.startDate || l.league_start_date || new Date()),
                     endDate: new Date(l.endDate || l.league_end_date || new Date())
                 }));
             }),
             catchError(err => {
-                alert('Error fetching player leagues: ' + err);
                 console.error('Error fetching player leagues:', err);
                 return of([]);
             })
         ).subscribe((leagues: PlayerLeague[]) => {
+            console.log('Processed player leagues:', leagues);
             this.leagues.set(leagues);
             if (leagues.length > 0) {
-                if (!this.selectedLeagueId()) {
+                const currentSelectedId = this.selectedLeagueId();
+                const stillExists = leagues.find(l => l.id === currentSelectedId);
+
+                if (!currentSelectedId || !stillExists) {
+                    console.log('Syncing selectedLeagueId to:', leagues[0].id);
                     this.selectedLeagueId.set(leagues[0].id);
                 }
-                // Fetch details for the first league found or currently selected
+
                 const leagueToFetch = leagues.find(l => l.id === this.selectedLeagueId()) || leagues[0];
                 this.fetchLeagueDetailsByName(leagueToFetch.name, leagueToFetch.id);
+            } else {
+                this.selectedLeagueId.set(null);
+                this.matches.set([]);
             }
         });
     }
 
     fetchLeagueDetailsByName(leagueName: string, leagueId: string) {
-        console.log(`Fetching details for league: ${leagueName}`);
-        this.http.get<LeagueRoundPayload>(`api/v1/league/name/${leagueName}`).pipe(
+        console.log(`[PlayerService] Fetching details for league: ${leagueName} (ID: ${leagueId})`);
+
+        // Try fetching by name
+        const encodedName = encodeURIComponent(leagueName);
+        this.http.get<LeagueRoundPayload>(`api/v1/league/name/${encodedName}`).pipe(
             catchError(err => {
-                console.error('Error fetching league details:', err);
+                console.error(`[PlayerService] Error fetching league details by name (${leagueName}):`, err);
                 return of(null);
             })
         ).subscribe(details => {
-            if (details && details.rounds) {
-                const currentPlayerId = this.getCurrentPlayerId(); // This might be mock '1', need real ID
-                const realUser = this.authService.currentUser();
-                // If we have a real user, try to match by email since ID migh vary
-                const userEmail = realUser?.email;
+            const matches = this.parseLeagueDetails(details, leagueId, leagueName);
 
-                console.log('Current User Email:', userEmail);
-                console.log('League Details:', details);
-
-                const newMatches: UpcomingMatch[] = [];
-
-                if (!userEmail) {
-                    console.warn('No user email found, cannot filter matches.');
-                    return;
-                }
-
-                details.rounds.forEach(round => {
-                    round.group.forEach(group => {
-                        group.match.forEach(match => {
-                            // Check if current player is in this match
-                            const p1 = match.team_one.player_one;
-                            const p2 = match.team_one.player_two;
-                            const p3 = match.team_two.player_one;
-                            const p4 = match.team_two.player_two;
-
-                            const allPlayers = [p1, p2, p3, p4];
-                            const isParticipant = allPlayers.some(p => p.email === userEmail); // Match by email
-
-                            if (isParticipant) {
-                                console.log('Found match for user:', match.match_id);
-                                // Map to UpcomingMatch
-                                newMatches.push({
-                                    id: match._id || match.match_id,
-                                    leagueId: leagueId, // Use passed ID instead of relying on details
-                                    leagueName: details.league_name,
-                                    date: new Date(), // Date not in payload yet, defaulting
-                                    time: 'TBD',
-                                    court: 'TBD',
-                                    status: 'upcoming', // Default
-                                    players: allPlayers.map((p, index) => ({
-                                        id: p.email, // using email as ID for now
-                                        name: `${p.firstName} ${p.lastName}`,
-                                        rating: 0 // Not in payload
-                                    })),
-                                    myTeamPlayerIds: (p1.email === userEmail || p2.email === userEmail) ? [p1.email, p2.email] : [p3.email, p4.email],
-                                    opponentTeamPlayerIds: (p1.email === userEmail || p2.email === userEmail) ? [p3.email, p4.email] : [p1.email, p2.email],
-                                    roundId: round.round_id,
-                                    groupId: group.group_id
-                                });
-                            }
-                        });
-                    });
+            // If no matches found by name, try fetching by ID (which daily-slotting uses via the name endpoint)
+            if (matches.length === 0 && leagueId && String(leagueId) !== String(leagueName)) { // Added String() for safety
+                console.log(`[PlayerService] No matches found by name, trying fetch by ID: ${leagueId}`);
+                this.http.get<LeagueRoundPayload>(`api/v1/league/name/${leagueId}`).pipe(
+                    catchError(err => {
+                        console.error(`[PlayerService] Error fetching league details by ID (${leagueId}):`, err);
+                        return of(null);
+                    })
+                ).subscribe(idDetails => {
+                    const idMatches = this.parseLeagueDetails(idDetails, leagueId, leagueName);
+                    this.matches.set(idMatches);
                 });
-
-                if (newMatches.length > 0) {
-                    this.matches.set(newMatches);
-                }
+            } else {
+                this.matches.set(matches);
             }
         });
+    }
+
+    private parseLeagueDetails(details: any, leagueId: string, leagueName: string): UpcomingMatch[] {
+        if (!details) {
+            console.warn(`[PlayerService] No details returned for ${leagueName}.`);
+            return [];
+        }
+
+        const userEmail = this.authService.currentUser()?.email;
+        if (!userEmail) {
+            console.warn('[PlayerService] No user email found, cannot filter matches.');
+            return [];
+        }
+
+        const emailLower = userEmail.toLowerCase();
+        const newMatches: UpcomingMatch[] = [];
+
+        console.log(`[PlayerService] Processing details for ${leagueName}. Response has matches: ${!!details.matches}, rounds: ${!!details.rounds}`);
+
+        const playersLookup = new Map<string, any>();
+        if (details.players) {
+            details.players.forEach((p: any) => {
+                if (p.email) playersLookup.set(p.email.toLowerCase(), p);
+            });
+        }
+
+        const processMatch = (m: any) => {
+            const t1 = m.team_one;
+            const t2 = m.team_two;
+            if (!t1 || !t2) {
+                console.warn(`[PlayerService] Skipping match ${m._id || m.match_id} due to missing team data.`);
+                return;
+            }
+
+            const p1 = t1.player_one;
+            const p2 = t1.player_two;
+            const p3 = t2.player_one;
+            const p4 = t2.player_two;
+
+            const allPlayers = [p1, p2, p3, p4].filter(p => !!p);
+            const isParticipant = allPlayers.some(p => String(p.email)?.toLowerCase() === emailLower); // String() for safety
+
+            if (isParticipant) {
+                const myTeamEmails = [p1, p2].filter(p => !!p && !!p.email).map(p => String(p.email).toLowerCase()); // String() for safety
+                const isTeam1 = myTeamEmails.includes(emailLower);
+                console.log(`[PlayerService] Participant found in match ${m._id || m.match_id}. Is Team 1: ${isTeam1}`);
+
+                // Date parsing robustnes: use m.date or extract from m.time if it looks like a date string
+                let matchDate = m.date ? new Date(m.date) : new Date();
+                if (m.time && (String(m.time).includes('-') || String(m.time).includes('/')) && isNaN(matchDate.getTime())) { // String() for safety
+                    matchDate = new Date(m.time);
+                }
+
+                // If time is a full date string, extract just the time part for display
+                let timeStr = String(m.time || 'TBD'); // String() for safety
+                if (timeStr.includes('T')) {
+                    timeStr = timeStr.split('T')[1].substring(0, 5);
+                }
+
+                newMatches.push({
+                    id: String(m._id || m.match_id),
+                    leagueId: String(leagueId || m.league_id || details.league_id),
+                    leagueName: m.league_name || details.league_name || leagueName,
+                    date: isNaN(matchDate.getTime()) ? new Date() : matchDate,
+                    time: timeStr,
+                    court: String(m.court_number || m.court || 'TBD'),
+                    players: allPlayers.map(p => {
+                        const lookup = playersLookup.get(String(p.email)?.toLowerCase()); // String() for safety
+                        return {
+                            id: String(p.id || p.email),
+                            name: p.name || (p.firstName ? `${p.firstName} ${p.lastName}` : (lookup?.firstName ? `${lookup.firstName} ${lookup.lastName}` : 'Unknown')),
+                            rating: p.dupr_rating || lookup?.dupr_rating || 0
+                        };
+                    }),
+                    myTeamPlayerIds: isTeam1
+                        ? [p1?.email, p2?.email].filter((e): e is string => !!e).map(String) // Map to String for safety
+                        : [p3?.email, p4?.email].filter((e): e is string => !!e).map(String), // Map to String for safety
+                    opponentTeamPlayerIds: isTeam1
+                        ? [p3?.email, p4?.email].filter((e): e is string => !!e).map(String) // Map to String for safety
+                        : [p1?.email, p2?.email].filter((e): e is string => !!e).map(String), // Map to String for safety
+                    roundId: String(m.round_id || ''),
+                    groupId: String(m.group_id || ''),
+                    status: (String(m.match_status)?.toLowerCase() === 'completed' || String(m.match_status)?.toLowerCase() === 'finished' || (t1.score > 0 || t2.score > 0)) ? 'completed' : 'upcoming', // String() for safety
+                    team1Score: t1.score || 0,
+                    team2Score: t2.score || 0
+                });
+            }
+        };
+
+        if (details.matches && Array.isArray(details.matches)) {
+            console.log(`[PlayerService] Processing ${details.matches.length} top-level matches.`);
+            details.matches.forEach((m: any) => processMatch(m));
+        }
+
+        // Only check rounds if no matches found in top-level list
+        if (newMatches.length === 0 && details.rounds && Array.isArray(details.rounds)) {
+            console.log(`[PlayerService] No top-level matches found, processing ${details.rounds.length} rounds.`);
+            details.rounds.forEach((round: any) => {
+                round.group?.forEach((group: any) => {
+                    group.match?.forEach((match: any) => processMatch(match));
+                });
+            });
+        }
+
+        console.log(`[PlayerService] Successfully mapped ${newMatches.length} matches for user.`);
+        return newMatches;
     }
 
 
     // Get match by ID
     getMatchById(matchId: string): UpcomingMatch | undefined {
-        return this.matches().find(m => m.id === matchId);
+        return this.matches().find((m: UpcomingMatch) => String(m.id) === String(matchId));
     }
 
     // Select a league
     selectLeague(leagueId: string) {
         this.selectedLeagueId.set(leagueId);
-        const league = this.leagues().find(l => l.id === leagueId);
+        const league = this.leagues().find((l: PlayerLeague) => l.id === leagueId);
         if (league) {
             this.fetchLeagueDetailsByName(league.name, league.id);
         }
@@ -224,10 +322,11 @@ export class PlayerService {
         return this.currentPlayerId();
     }
 
-    updateMatchScore(matchId: string, score1: number, score2: number) {
-        console.log(`Sending score update for ${matchId}: ${score1} - ${score2}`);
+    updateMatchScore(leagueId: string, matchId: string, score1: number, score2: number) {
+        console.log(`Sending score update for ${matchId} in league ${leagueId}: ${score1} - ${score2}`);
 
         const payload = {
+            league_id: leagueId,
             match_id: matchId,
             score_team_1: score1,
             score_team_2: score2,
@@ -237,6 +336,14 @@ export class PlayerService {
         return this.http.post('api/v1/league/match/score', payload).pipe(
             map(res => {
                 console.log('Score update response:', res);
+                // Update local signal to reflect changes immediately
+                this.matches.update(currentMatches =>
+                    currentMatches.map(m =>
+                        m.id === matchId
+                            ? { ...m, status: 'completed' as const, team1Score: score1, team2Score: score2 }
+                            : m
+                    )
+                );
                 return true;
             }),
             catchError(err => {
@@ -249,10 +356,11 @@ export class PlayerService {
     fetchAllLeagues() {
         this.http.get<any[]>('api/v1/all_leagues').pipe(
             map(data => {
+                if (!Array.isArray(data)) return [];
                 return data.map((l: any) => ({
-                    id: l.id || l._id || String(l.league_id) || crypto.randomUUID(),
+                    id: String(l.id || l._id || l.league_id || crypto.randomUUID()),
                     name: l.league_name || l.name || 'Unknown League',
-                    status: l.status || l.league_status || 'active',
+                    status: (l.status || l.league_status || 'active').toLowerCase(),
                     startDate: new Date(l.startDate || l.league_start_date || new Date()),
                     endDate: new Date(l.endDate || l.league_end_date || new Date())
                 }));

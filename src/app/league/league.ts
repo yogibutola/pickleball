@@ -44,6 +44,7 @@ export interface MatchItem {
   team_one: TeamItem;
   team_two: TeamItem;
   siting_player?: TeamMember;
+  match_status?: string;
   time: string;
   court_number: string;
 }
@@ -63,6 +64,8 @@ export interface LeagueRoundPayload {
   league_id: string | number;
   league_name: string;
   rounds: RoundItem[];
+  matches?: MatchItem[];
+  players?: Player[];
 }
 
 export interface LeagueDetailsPayload {
@@ -106,17 +109,22 @@ export class LeagueService {
     console.log("leagueId: " + leagueId);
     const url = leagueId ? `/api/v1/league/id/${leagueId}` : '/api/v1/players';
     console.log(url);
-    this.http.get<any[]>(url).pipe(
-      map(data => data.map(p => ({
-        id: p.id || p._id || Math.random().toString(36).substr(2, 9),
-        name: p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.name || p.userName || 'Unknown Player'),
-        firstName: p.firstName || '',
-        lastName: p.lastName || '',
-        userName: p.userName || '',
-        email: p.email || '',
-        password: '', // Dummy password for backend validator if needed
-        dupr_rating: p.dupr_rating || 0
-      }))),
+    this.http.get<any>(url).pipe(
+      map(data => {
+        // Handle both flat array and object response formats
+        const playersList = Array.isArray(data) ? data : (data.players || (data.data ? data.data : []));
+
+        return playersList.map((p: any) => ({
+          id: String(p.id || p._id || Math.random().toString(36).substr(2, 9)),
+          name: p.firstName && p.lastName ? `${p.firstName} ${p.lastName}` : (p.name || p.userName || 'Unknown Player'),
+          firstName: p.firstName || '',
+          lastName: p.lastName || '',
+          userName: p.userName || '',
+          email: p.email || '',
+          password: '',
+          dupr_rating: p.dupr_rating || 0
+        }));
+      }),
       catchError(err => {
         console.error('Error fetching players:', err);
         return of([]);

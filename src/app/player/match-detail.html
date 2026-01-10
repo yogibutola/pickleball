@@ -18,6 +18,12 @@
                         <span class="info-label">League</span>
                         <span class="info-value">{{ match()!.leagueName }}</span>
                     </div>
+                    @if (match()?.groupId) {
+                    <div class="info-item">
+                        <span class="info-label">Group</span>
+                        <span class="info-value">Group {{ match()!.groupId!.replace('G', '') }}</span>
+                    </div>
+                    }
                     <div class="info-item">
                         <span class="info-label">Date</span>
                         <span class="info-value">{{ formatDate(match()!.date) }}</span>
@@ -43,7 +49,8 @@
         <!-- Teams Display -->
         <div class="teams-container">
             <!-- My Team -->
-            <div class="card team-card my-team-card">
+            <div class="card team-card my-team-card"
+                [class.winner]="(match()?.team1Score || 0) > (match()?.team2Score || 0)">
                 <div class="team-header">
                     <div class="header-content">
                         <h3>My Team</h3>
@@ -54,6 +61,10 @@
                         <label>Score</label>
                         <input type="number" [(ngModel)]="team1Score" min="0" max="15" class="score-input-small"
                             placeholder="0" autoFocus>
+                    </div>
+                    } @else if (match()?.status === 'completed') {
+                    <div class="final-score-display">
+                        <span class="score-value">{{ match()?.team1Score }}</span>
                     </div>
                     }
                 </div>
@@ -74,11 +85,14 @@
 
             <!-- VS Divider -->
             <div class="vs-section">
-                <div class="vs-circle">VS</div>
+                <div class="vs-circle" [class.completed]="match()?.status === 'completed'">
+                    {{ match()?.status === 'completed' ? (match()!.team1Score + ' : ' + match()!.team2Score) : 'VS' }}
+                </div>
             </div>
 
             <!-- Opponent Team -->
-            <div class="card team-card opponent-team-card">
+            <div class="card team-card opponent-team-card"
+                [class.winner]="(match()?.team2Score || 0) > (match()?.team1Score || 0)">
                 <div class="team-header">
                     <div class="header-content">
                         <h3>Opponent Team</h3>
@@ -89,6 +103,10 @@
                         <label>Score</label>
                         <input type="number" [(ngModel)]="team2Score" min="0" max="15" class="score-input-small"
                             placeholder="0">
+                    </div>
+                    } @else if (match()?.status === 'completed') {
+                    <div class="final-score-display">
+                        <span class="score-value">{{ match()?.team2Score }}</span>
                     </div>
                     }
                 </div>
@@ -108,8 +126,13 @@
             @if (isScoring()) {
             <button class="btn btn-primary" (click)="submitScore()">Save Score</button>
             <button class="btn btn-secondary" (click)="toggleScoreEntry()">Cancel</button>
-            } @else {
+            } @else if (match()?.status !== 'completed') {
             <button class="btn" (click)="toggleScoreEntry()">Enter Score</button>
+            <button class="btn btn-secondary" (click)="goBack()">Back to Dashboard</button>
+            } @else {
+            <div class="completed-msg">
+                <span class="icon">✓</span> Match Completed
+            </div>
             <button class="btn btn-secondary" (click)="goBack()">Back to Dashboard</button>
             }
         </div>

@@ -49,7 +49,12 @@
                         <span class="date-text">{{ formatDate(match.date) }}</span>
                         <span class="time-text">{{ match.time }}</span>
                     </div>
-                    <span class="court-badge">{{ match.court }}</span>
+                    <div class="match-meta">
+                        @if (match.groupId) {
+                        <span class="group-badge">Group {{ match.groupId.replace('G', '') || '?' }}</span>
+                        }
+                        <span class="court-badge">{{ match.court || 'Court TBD' }}</span>
+                    </div>
                 </div>
 
                 <div class="match-teams">
@@ -69,6 +74,65 @@
                 <div class="match-footer">
                     <span class="league-tag">{{ match.leagueName }}</span>
                     <span class="view-details">View Details →</span>
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- Completed Matches Grid -->
+        <header class="dashboard-header" style="margin-top: var(--space-xl); margin-bottom: var(--space-lg);">
+            <div>
+                <h1 class="text-gradient">Completed Matches</h1>
+            </div>
+        </header>
+
+        <div class="matches-grid">
+            @if (completedMatches().length === 0) {
+            <div class="empty-state card">
+                <h3>No completed matches</h3>
+                <p style="color: var(--color-text-muted);">
+                    As you finish matches, they will appear here.
+                </p>
+            </div>
+            }
+            @for (match of completedMatches(); track match.id) {
+            <div class="match-card card completed-card" (click)="viewMatchDetail(match.id)">
+                <div class="match-header">
+                    <div class="match-date">
+                        <span class="date-text">{{ formatDate(match.date) }}</span>
+                        <span class="time-text">{{ match.time }}</span>
+                    </div>
+                    <div class="match-meta">
+                        @if (match.groupId) {
+                        <span class="group-badge">Group {{ match.groupId.replace('G', '') || '?' }}</span>
+                        }
+                        <span class="court-badge">{{ match.court || 'Court TBD' }}</span>
+                    </div>
+                </div>
+
+                <div class="match-teams">
+                    <div class="team my-team" [class.winner]="(match.team1Score || 0) > (match.team2Score || 0)">
+                        <div class="team-info-row">
+                            <span class="team-label">My Team</span>
+                            <span class="final-score">{{ match.team1Score }}</span>
+                        </div>
+                        <span class="team-players">{{ getTeammates(match) || 'Partner TBD' }}</span>
+                    </div>
+
+                    <div class="vs-divider">VS</div>
+
+                    <div class="team opponent-team" [class.winner]="(match.team2Score || 0) > (match.team1Score || 0)">
+                        <div class="team-info-row">
+                            <span class="team-label">Opponents</span>
+                            <span class="final-score">{{ match.team2Score }}</span>
+                        </div>
+                        <span class="team-players">{{ getOpponents(match) }}</span>
+                    </div>
+                </div>
+
+                <div class="match-footer">
+                    <span class="league-tag">{{ match.leagueName }}</span>
+                    <span class="view-details">Match Results →</span>
                 </div>
             </div>
             }
