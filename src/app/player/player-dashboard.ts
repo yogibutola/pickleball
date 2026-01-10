@@ -18,6 +18,7 @@ export class PlayerDashboardComponent {
     selectedLeague = this.playerService.getSelectedLeague;
     upcomingMatches = this.playerService.getUpcomingMatches;
     completedMatches = this.playerService.getCompletedMatches;
+    standings = this.playerService.getStandings;
 
     selectLeague(leagueId: string) {
         this.playerService.selectLeague(leagueId);

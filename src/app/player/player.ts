@@ -20,6 +20,13 @@ export interface MatchPlayer {
     rating: number;
 }
 
+export interface PlayerStanding {
+    email: string;
+    name: string;
+    totalScore: number;
+    matchesPlayed: number;
+}
+
 export interface UpcomingMatch {
     id: string;
     leagueId: string;
@@ -57,6 +64,9 @@ export class PlayerService {
 
     // Mock upcoming matches
     private matches = signal<UpcomingMatch[]>([]);
+
+    // League standings
+    private standings = signal<PlayerStanding[]>([]);
 
     // Computed: Get all leagues player is in
     getLeagues = computed(() => this.leagues());
@@ -101,6 +111,9 @@ export class PlayerService {
         return filtered;
     });
 
+    // Computed: Get league standings
+    getStandings = computed(() => this.standings());
+
     // Computed: Get selected league
     getSelectedLeague = computed(() => {
         const selectedId = this.selectedLeagueId();
@@ -126,9 +139,11 @@ export class PlayerService {
     }
 
     fetchLeaguesForPlayer(email: string) {
-        this.http.get<any>(`api/v1/player/league/${email}`).pipe(
+        const emailLower = email.toLowerCase();
+        console.log(`[PlayerService] Fetching leagues for: ${emailLower}`);
+        this.http.get<any>(`api/v1/player/league/${emailLower}`).pipe(
             map(data => {
-                console.log('Player leagues API response:', data);
+                console.log('[PlayerService] Player leagues API response:', data);
                 if (!data) return [];
                 const leaguesList = Array.isArray(data) ? data : (data.leagues || (data.data ? data.data : []));
 
@@ -141,18 +156,18 @@ export class PlayerService {
                 }));
             }),
             catchError(err => {
-                console.error('Error fetching player leagues:', err);
+                console.error('[PlayerService] Error fetching player leagues:', err);
                 return of([]);
             })
         ).subscribe((leagues: PlayerLeague[]) => {
-            console.log('Processed player leagues:', leagues);
+            console.log('[PlayerService] Processed player leagues:', leagues);
             this.leagues.set(leagues);
             if (leagues.length > 0) {
                 const currentSelectedId = this.selectedLeagueId();
                 const stillExists = leagues.find(l => l.id === currentSelectedId);
 
                 if (!currentSelectedId || !stillExists) {
-                    console.log('Syncing selectedLeagueId to:', leagues[0].id);
+                    console.log('[PlayerService] Syncing selectedLeagueId to:', leagues[0].id);
                     this.selectedLeagueId.set(leagues[0].id);
                 }
 
@@ -179,7 +194,7 @@ export class PlayerService {
             const matches = this.parseLeagueDetails(details, leagueId, leagueName);
 
             // If no matches found by name, try fetching by ID (which daily-slotting uses via the name endpoint)
-            if (matches.length === 0 && leagueId && String(leagueId) !== String(leagueName)) { // Added String() for safety
+            if (matches.length === 0 && leagueId && String(leagueId) !== String(leagueName)) {
                 console.log(`[PlayerService] No matches found by name, trying fetch by ID: ${leagueId}`);
                 this.http.get<LeagueRoundPayload>(`api/v1/league/name/${leagueId}`).pipe(
                     catchError(err => {
@@ -220,37 +235,101 @@ export class PlayerService {
             });
         }
 
+        // --- Standings Calculation ---
+        const standingsMap = new Map<string, PlayerStanding>();
+
+        // Helper to add player score to standings
+        const updateStanding = (player: any, score: number, isCompleted: boolean) => {
+            if (!player || !player.email) return;
+            const email = player.email.toLowerCase();
+            let state = standingsMap.get(email);
+            if (!state) {
+                state = { email, name: player.name, totalScore: 0, matchesPlayed: 0 };
+                standingsMap.set(email, state);
+            }
+            state.totalScore += score;
+            if (isCompleted) state.matchesPlayed += 1;
+        };
+
         const processMatch = (m: any) => {
-            const t1 = m.team_one;
-            const t2 = m.team_two;
+            // Support multiple team naming conventions
+            const t1 = m.team_one || m.team1;
+            const t2 = m.team_two || m.team2;
+
             if (!t1 || !t2) {
-                console.warn(`[PlayerService] Skipping match ${m._id || m.match_id} due to missing team data.`);
+                console.warn(`[PlayerService] Skipping match ${m._id || m.match_id} due to missing team data.`, m);
                 return;
             }
 
-            const p1 = t1.player_one;
-            const p2 = t1.player_two;
-            const p3 = t2.player_one;
-            const p4 = t2.player_two;
+            // Support multiple player naming conventions
+            const p1Raw = t1.player_one || t1.player1;
+            const p2Raw = t1.player_two || t1.player2;
+            const p3Raw = t2.player_one || t2.player1;
+            const p4Raw = t2.player_two || t2.player2;
+
+            // Helper to normalize player data (could be string email or object)
+            const normalizePlayer = (p: any) => {
+                if (!p) return null;
+                if (typeof p === 'string') {
+                    const lookup = playersLookup.get(p.toLowerCase());
+                    return {
+                        email: p.toLowerCase(),
+                        firstName: lookup?.firstName || '',
+                        lastName: lookup?.lastName || '',
+                        name: lookup ? `${lookup.firstName} ${lookup.lastName}` : p,
+                        dupr_rating: lookup?.dupr_rating || 0
+                    };
+                }
+                const email = (p.email || p.id || '').toLowerCase();
+                const lookup = playersLookup.get(email);
+                return {
+                    email: email,
+                    firstName: p.firstName || lookup?.firstName || '',
+                    lastName: p.lastName || lookup?.lastName || '',
+                    name: p.name || (p.firstName ? `${p.firstName} ${p.lastName}` : (lookup ? `${lookup.firstName} ${lookup.lastName}` : 'Unknown')),
+                    dupr_rating: p.dupr_rating || lookup?.dupr_rating || 0
+                };
+            };
+
+            const p1 = normalizePlayer(p1Raw);
+            const p2 = normalizePlayer(p2Raw);
+            const p3 = normalizePlayer(p3Raw);
+            const p4 = normalizePlayer(p4Raw);
 
             const allPlayers = [p1, p2, p3, p4].filter(p => !!p);
-            const isParticipant = allPlayers.some(p => String(p.email)?.toLowerCase() === emailLower); // String() for safety
+
+            const isCompleted = (String(m.match_status)?.toLowerCase() === 'completed' || String(m.match_status)?.toLowerCase() === 'finished' || (Number(t1.score || 0) > 0 || Number(t2.score || 0) > 0));
+
+            // Update standings for EVERYONE in the match
+            if (isCompleted) {
+                const s1 = Number(t1.score || 0);
+                const s2 = Number(t2.score || 0);
+                [p1, p2].forEach(p => updateStanding(p, s1, true));
+                [p3, p4].forEach(p => updateStanding(p, s2, true));
+            }
+
+            // Check if current user is in this match for the dashboard lists
+            const isParticipant = allPlayers.some(p => p?.email === emailLower);
 
             if (isParticipant) {
-                const myTeamEmails = [p1, p2].filter(p => !!p && !!p.email).map(p => String(p.email).toLowerCase()); // String() for safety
+                const myTeamEmails = [p1, p2].filter(p => !!p).map(p => p!.email);
                 const isTeam1 = myTeamEmails.includes(emailLower);
-                console.log(`[PlayerService] Participant found in match ${m._id || m.match_id}. Is Team 1: ${isTeam1}`);
 
-                // Date parsing robustnes: use m.date or extract from m.time if it looks like a date string
+                console.log(`[PlayerService] Match ${m._id || m.match_id}: USER FOUND in ${isTeam1 ? 'Team 1' : 'Team 2'}`);
+
+                // Date/Time parsing
                 let matchDate = m.date ? new Date(m.date) : new Date();
-                if (m.time && (String(m.time).includes('-') || String(m.time).includes('/')) && isNaN(matchDate.getTime())) { // String() for safety
-                    matchDate = new Date(m.time);
-                }
-
-                // If time is a full date string, extract just the time part for display
-                let timeStr = String(m.time || 'TBD'); // String() for safety
+                let timeStr = String(m.time || 'TBD');
                 if (timeStr.includes('T')) {
-                    timeStr = timeStr.split('T')[1].substring(0, 5);
+                    const parts = timeStr.split('T');
+                    if (isNaN(matchDate.getTime())) matchDate = new Date(parts[0]);
+                    timeStr = parts[1].substring(0, 5);
+                } else if (timeStr.includes('-') || timeStr.includes('/')) {
+                    const tempDate = new Date(timeStr);
+                    if (!isNaN(tempDate.getTime())) {
+                        matchDate = tempDate;
+                        timeStr = tempDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                    }
                 }
 
                 newMatches.push({
@@ -260,26 +339,27 @@ export class PlayerService {
                     date: isNaN(matchDate.getTime()) ? new Date() : matchDate,
                     time: timeStr,
                     court: String(m.court_number || m.court || 'TBD'),
-                    players: allPlayers.map(p => {
-                        const lookup = playersLookup.get(String(p.email)?.toLowerCase()); // String() for safety
-                        return {
-                            id: String(p.id || p.email),
-                            name: p.name || (p.firstName ? `${p.firstName} ${p.lastName}` : (lookup?.firstName ? `${lookup.firstName} ${lookup.lastName}` : 'Unknown')),
-                            rating: p.dupr_rating || lookup?.dupr_rating || 0
-                        };
-                    }),
+                    players: allPlayers.map(p => ({
+                        id: p!.email,
+                        name: p!.name,
+                        rating: p!.dupr_rating
+                    })),
                     myTeamPlayerIds: isTeam1
-                        ? [p1?.email, p2?.email].filter((e): e is string => !!e).map(String) // Map to String for safety
-                        : [p3?.email, p4?.email].filter((e): e is string => !!e).map(String), // Map to String for safety
+                        ? [p1?.email, p2?.email].filter((e): e is string => !!e)
+                        : [p3?.email, p4?.email].filter((e): e is string => !!e),
                     opponentTeamPlayerIds: isTeam1
-                        ? [p3?.email, p4?.email].filter((e): e is string => !!e).map(String) // Map to String for safety
-                        : [p1?.email, p2?.email].filter((e): e is string => !!e).map(String), // Map to String for safety
+                        ? [p3?.email, p4?.email].filter((e): e is string => !!e)
+                        : [p1?.email, p2?.email].filter((e): e is string => !!e),
                     roundId: String(m.round_id || ''),
                     groupId: String(m.group_id || ''),
-                    status: (String(m.match_status)?.toLowerCase() === 'completed' || String(m.match_status)?.toLowerCase() === 'finished' || (t1.score > 0 || t2.score > 0)) ? 'completed' : 'upcoming', // String() for safety
-                    team1Score: t1.score || 0,
-                    team2Score: t2.score || 0
+                    status: isCompleted ? 'completed' : 'upcoming',
+                    team1Score: Number(t1.score || 0),
+                    team2Score: Number(t2.score || 0)
                 });
+            } else {
+                // Log why it failed to help debugging
+                const matchEmails = allPlayers.map(p => p?.email);
+                console.debug(`[PlayerService] Match ${m._id || m.match_id}: User ${emailLower} NOT found in [${matchEmails.join(', ')}]`);
             }
         };
 
@@ -290,13 +370,19 @@ export class PlayerService {
 
         // Only check rounds if no matches found in top-level list
         if (newMatches.length === 0 && details.rounds && Array.isArray(details.rounds)) {
-            console.log(`[PlayerService] No top-level matches found, processing ${details.rounds.length} rounds.`);
+            console.log(`[PlayerService] Processing ${details.rounds.length} rounds.`);
             details.rounds.forEach((round: any) => {
                 round.group?.forEach((group: any) => {
                     group.match?.forEach((match: any) => processMatch(match));
                 });
             });
         }
+
+        // Set standings sorted by total score
+        const sortedStandings = Array.from(standingsMap.values())
+            .sort((a, b) => b.totalScore - a.totalScore);
+        this.standings.set(sortedStandings);
+        console.log(`[PlayerService] Standings calculated for ${sortedStandings.length} players.`);
 
         console.log(`[PlayerService] Successfully mapped ${newMatches.length} matches for user.`);
         return newMatches;
@@ -378,28 +464,20 @@ export class PlayerService {
         const user = this.authService.currentUser();
         if (!user) return of(false);
 
-        // alert(`Registering for league: ${leagueId}`);
         const payload = {
             league_id: leagueId,
             email: user.email
         };
 
-        // Assuming this endpoint exists based on usual patterns, or we'd use a different update mechanism
         return this.http.post('api/v1/league/register', payload).pipe(
             map(res => {
-                // alert('Registration successful!');
                 console.log('Registration successful:', res);
-                // Refresh player leagues
                 this.fetchLeaguesForPlayer(user.email);
                 return true;
             }),
             catchError(err => {
-                alert('Registration failed!!!!!' + err.message);
+                alert('Registration failed: ' + err.message);
                 console.error('Registration error:', err);
-                // Fallback: If 404, we might not have the endpoint yet, alert user
-                if (err.status === 404) {
-                    alert('Registration endpoint not found on server. Please contact admin.');
-                }
                 return of(false);
             })
         );
