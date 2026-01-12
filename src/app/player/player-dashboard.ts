@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { PlayerService } from './player';
@@ -19,6 +19,13 @@ export class PlayerDashboardComponent {
     upcomingMatches = this.playerService.getUpcomingMatches;
     completedMatches = this.playerService.getCompletedMatches;
     standings = this.playerService.getStandings;
+
+    // Local navigation state
+    activeSection = signal<'matches' | 'leagues' | 'stats'>('matches');
+
+    setActiveSection(section: 'matches' | 'leagues' | 'stats') {
+        this.activeSection.set(section);
+    }
 
     selectLeague(leagueId: string) {
         this.playerService.selectLeague(leagueId);

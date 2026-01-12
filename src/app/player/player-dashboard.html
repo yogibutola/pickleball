@@ -1,24 +1,60 @@
 <div class="dashboard-container">
-    <!-- Sidebar with League Selection -->
+    <!-- Sidebar with League Selection and Navigation -->
     <aside class="sidebar">
-        <h2 class="sidebar-title">My Leagues</h2>
-        <div class="league-list">
-            @for (league of leagues(); track league.id) {
-            <button class="league-item" [class.selected]="selectedLeague()?.id === league.id"
-                (click)="selectLeague(league.id)">
-                <div class="league-info">
-                    <span class="league-name">{{ league.name }}</span>
-                    <span class="league-status" [class]="'status-' + league.status">
-                        {{ league.status }}
-                    </span>
-                </div>
-            </button>
-            }
+        <h2 class="sidebar-title">Player Menu</h2>
+
+        <div class="sidebar-group">
+            <label class="sidebar-label">Select League</label>
+            <div class="select-wrapper">
+                <select [value]="selectedLeague()?.id" (change)="selectLeague($any($event.target).value)"
+                    class="league-select">
+                    <option value="" disabled>Choose a league...</option>
+                    @for (league of leagues(); track league.id) {
+                    <option [value]="league.id">{{ league.name }}</option>
+                    }
+                </select>
+            </div>
         </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-item" [class.active]="activeSection() === 'matches'"
+                (click)="setActiveSection('matches')">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Matches</span>
+            </button>
+            <button class="nav-item" [class.active]="activeSection() === 'leagues'"
+                (click)="setActiveSection('leagues')">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path
+                            d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z">
+                        </path>
+                    </svg>
+                </span>
+                <span class="nav-label">Leagues</span>
+            </button>
+            <button class="nav-item" [class.active]="activeSection() === 'stats'" (click)="setActiveSection('stats')">
+                <span class="nav-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 118 2.83"></path>
+                        <path d="M22 12A10 10 0 0012 2v10z"></path>
+                    </svg>
+                </span>
+                <span class="nav-label">Stats</span>
+            </button>
+        </nav>
     </aside>
 
     <!-- Main Content -->
     <main class="main-content">
+        @if (activeSection() === 'matches') {
         <header class="dashboard-header">
             <div>
                 <h1 class="text-gradient">Upcoming Matches</h1>
@@ -28,7 +64,7 @@
             </div>
             <div class="header-actions">
                 <a routerLink="/league" class="btn btn-secondary">Dashboard</a>
-                <a routerLink="/player/leagues" class="btn btn-primary">Leagues</a>
+                <a routerLink="/player/leagues" class="btn btn-primary">Join League</a>
             </div>
         </header>
 
@@ -137,16 +173,51 @@
             </div>
             }
         </div>
+        }
 
-        <!-- League Standings Section -->
-        @if (selectedLeague()) {
-        <header class="dashboard-header" style="margin-top: var(--space-xl); margin-bottom: var(--space-lg);">
+        @if (activeSection() === 'leagues') {
+        <header class="dashboard-header">
             <div>
-                <h1 class="text-gradient">Group Standings</h1>
-                <p class="league-subtitle">Total points accumulated across all sessions</p>
+                <h1 class="text-gradient">My Leagues</h1>
+                <p class="league-subtitle">Leagues you are currently participating in</p>
+            </div>
+            <div class="header-actions">
+                <a routerLink="/player/leagues" class="btn btn-primary">Find More Leagues</a>
             </div>
         </header>
 
+        <div class="leagues-grid"
+            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: var(--space-lg);">
+            @for (league of leagues(); track league.id) {
+            <div class="match-card card" [class.selected]="selectedLeague()?.id === league.id"
+                (click)="selectLeague(league.id); setActiveSection('matches')">
+                <div class="match-header">
+                    <h3 style="margin: 0; color: var(--color-primary);">{{ league.name }}</h3>
+                    <span class="league-status" [class]="'status-' + league.status">{{ league.status }}</span>
+                </div>
+                <div style="margin-top: var(--space-md); color: var(--color-text-muted);">
+                    <p>Starts: {{ league.startDate | date }}</p>
+                    <p>Ends: {{ league.endDate | date }}</p>
+                </div>
+                <div class="match-footer" style="margin-top: var(--space-md);">
+                    <span class="view-details">View Matches →</span>
+                </div>
+            </div>
+            }
+        </div>
+        }
+
+        @if (activeSection() === 'stats') {
+        <header class="dashboard-header">
+            <div>
+                <h1 class="text-gradient">Standings & Stats</h1>
+                @if (selectedLeague()) {
+                <p class="league-subtitle">{{ selectedLeague()?.name }} - Group Standings</p>
+                }
+            </div>
+        </header>
+
+        @if (selectedLeague()) {
         <div class="standings-container card">
             @if (standings().length === 0) {
             <div class="empty-state">
@@ -180,6 +251,12 @@
             </table>
             }
         </div>
+        } @else {
+        <div class="empty-state card">
+            <h3>No league selected</h3>
+            <p>Select a league from the menu to see standings.</p>
+        </div>
+        }
         }
     </main>
 </div>

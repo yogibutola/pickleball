@@ -21,43 +21,118 @@
     border-bottom: 2px solid HSL(var(--color-primary));
 }
 
-.league-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
+.sidebar-group {
+    margin-bottom: var(--space-xl);
 }
 
-.league-item {
-    background-color: rgba(255, 255, 255, 0.03);
+.sidebar-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.select-wrapper {
+    position: relative;
+}
+
+.league-select {
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
     padding: var(--space-md);
+    color: HSL(var(--color-text-main));
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    appearance: none;
+}
+
+.league-select:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: HSL(var(--color-primary) / 0.5);
+}
+
+.league-select:focus {
+    outline: none;
+    border-color: HSL(var(--color-primary));
+    box-shadow: 0 0 0 3px HSL(var(--color-primary) / 0.1);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast);
     color: HSL(var(--color-text-main));
     text-align: left;
 }
 
-.league-item:hover {
+.nav-item:hover {
     background-color: rgba(255, 255, 255, 0.08);
-    border-color: HSL(var(--color-primary) / 0.5);
-    transform: translateX(4px);
+    border-color: rgba(255, 255, 255, 0.1);
 }
 
-.league-item.selected {
-    background-color: HSL(var(--color-primary) / 0.2);
+.nav-item.active {
+    background-color: HSL(var(--color-primary) / 0.15);
     border-color: HSL(var(--color-primary));
 }
 
-.league-info {
+.nav-icon {
     display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    opacity: 0.7;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.league-name {
-    font-weight: 600;
+.nav-icon svg {
+    width: 100%;
+    height: 100%;
+    stroke-dasharray: 100;
+    stroke-dashoffset: 0;
+}
+
+.nav-item.active .nav-icon {
+    opacity: 1;
+    color: HSL(var(--color-primary));
+    transform: scale(1.1);
+}
+
+.nav-item.active .nav-icon svg {
+    animation: icon-draw 1s ease-out forwards;
+}
+
+@keyframes icon-draw {
+    from {
+        stroke-dashoffset: 100;
+    }
+
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+.nav-label {
     font-size: 1rem;
+    font-weight: 500;
 }
 
 .league-status {
