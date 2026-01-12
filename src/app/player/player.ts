@@ -40,6 +40,7 @@ export interface UpcomingMatch {
     opponentTeamPlayerIds: string[];
     // Additional fields from API
     roundId?: string;
+    roundName?: string;
     groupId?: string;
     team1Score?: number;
     team2Score?: number;
@@ -351,6 +352,7 @@ export class PlayerService {
                         ? [p3?.email, p4?.email].filter((e): e is string => !!e)
                         : [p1?.email, p2?.email].filter((e): e is string => !!e),
                     roundId: String(m.round_id || ''),
+                    roundName: m.round_name || m.roundName || '',
                     groupId: String(m.group_id || ''),
                     status: isCompleted ? 'completed' : 'upcoming',
                     team1Score: Number(t1.score || 0),

@@ -21,10 +21,88 @@ export class PlayerDashboardComponent {
     standings = this.playerService.getStandings;
 
     // Local navigation state
-    activeSection = signal<'matches' | 'leagues' | 'stats'>('matches');
+    activeSection = signal<'matches' | 'leagues' | 'stats' | 'standings'>('matches');
+    selectedRound = signal<string>('');
 
-    setActiveSection(section: 'matches' | 'leagues' | 'stats') {
+    setActiveSection(section: 'matches' | 'leagues' | 'stats' | 'standings') {
         this.activeSection.set(section);
+    }
+
+    setSelectedRound(roundId: string) {
+        this.selectedRound.set(roundId);
+    }
+
+    // Get unique rounds from all matches
+    getAvailableRounds(): { id: string; name: string }[] {
+        const allMatches = [...this.upcomingMatches(), ...this.completedMatches()];
+        const roundsMap = new Map<string, string>();
+
+        allMatches.forEach(match => {
+            if (match.roundId && !roundsMap.has(match.roundId)) {
+                roundsMap.set(match.roundId, match.roundName || `Round ${match.roundId}`);
+            }
+        });
+
+        return Array.from(roundsMap.entries()).map(([id, name]) => ({ id, name }));
+    }
+
+    // Get unique groups for the selected round
+    getGroupsForRound(roundId: string): string[] {
+        const allMatches = [...this.upcomingMatches(), ...this.completedMatches()];
+        const groups = new Set<string>();
+
+        allMatches
+            .filter(m => m.roundId === roundId && m.groupId)
+            .forEach(m => groups.add(m.groupId!));
+
+        return Array.from(groups).sort();
+    }
+
+    // Get standings for a specific group in a specific round
+    getStandingsForGroupAndRound(groupId: string, roundId: string): any[] {
+        const allMatches = [...this.upcomingMatches(), ...this.completedMatches()];
+
+        // Get completed matches for this group and round
+        const groupRoundMatches = allMatches.filter(m =>
+            m.groupId === groupId &&
+            m.roundId === roundId &&
+            m.status === 'completed'
+        );
+
+        // Calculate standings from these matches
+        const standingsMap = new Map<string, { email: string; name: string; totalScore: number; matchesPlayed: number }>();
+
+        groupRoundMatches.forEach(match => {
+            // Add players from my team
+            match.myTeamPlayerIds.forEach(email => {
+                const player = match.players.find(p => p.id === email);
+                if (player) {
+                    let entry = standingsMap.get(email);
+                    if (!entry) {
+                        entry = { email, name: player.name, totalScore: 0, matchesPlayed: 0 };
+                        standingsMap.set(email, entry);
+                    }
+                    entry.totalScore += match.team1Score || 0;
+                    entry.matchesPlayed += 1;
+                }
+            });
+
+            // Add players from opponent team
+            match.opponentTeamPlayerIds.forEach(email => {
+                const player = match.players.find(p => p.id === email);
+                if (player) {
+                    let entry = standingsMap.get(email);
+                    if (!entry) {
+                        entry = { email, name: player.name, totalScore: 0, matchesPlayed: 0 };
+                        standingsMap.set(email, entry);
+                    }
+                    entry.totalScore += match.team2Score || 0;
+                    entry.matchesPlayed += 1;
+                }
+            });
+        });
+
+        return Array.from(standingsMap.values()).sort((a, b) => b.totalScore - a.totalScore);
     }
 
     selectLeague(leagueId: string) {

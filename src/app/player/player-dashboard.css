@@ -346,6 +346,15 @@
     gap: var(--space-xs);
 }
 
+.round-badge {
+    background-color: HSL(var(--color-primary) / 0.2);
+    color: HSL(var(--color-primary));
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
 .group-badge {
     background-color: HSL(var(--color-secondary) / 0.2);
     color: HSL(var(--color-secondary));
