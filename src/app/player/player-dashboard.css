@@ -195,6 +195,96 @@
     gap: var(--space-lg);
 }
 
+.completed-match-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+/* Group Standings Mini */
+.group-standings-mini {
+    background-color: rgba(255, 255, 255, 0.02);
+    padding: var(--space-md);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    cursor: default;
+}
+
+.group-standings-mini:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.standings-mini-title {
+    margin: 0 0 var(--space-sm) 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.standings-mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.standings-mini-table th {
+    text-align: left;
+    padding: var(--space-xs) var(--space-sm);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.standings-mini-table td {
+    padding: var(--space-xs) var(--space-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.standings-mini-table tr:last-child td {
+    border-bottom: none;
+}
+
+.standings-mini-table tr.current-player {
+    background-color: HSL(var(--color-primary) / 0.1);
+}
+
+.pos-mini {
+    font-weight: 700;
+    color: var(--color-text-muted);
+    width: 40px;
+}
+
+.player-mini {
+    font-weight: 500;
+}
+
+.score-mini {
+    font-weight: 700;
+    color: HSL(var(--color-success));
+}
+
+.you-indicator {
+    display: inline-block;
+    margin-left: var(--space-xs);
+    background: linear-gradient(135deg, HSL(var(--color-primary)), HSL(var(--color-secondary)));
+    color: white;
+    font-size: 0.6rem;
+    font-weight: 800;
+    padding: 2px 5px;
+    border-radius: 3px;
+}
+
+.section-title {
+    color: HSL(var(--color-text-main));
+    font-size: 1.5rem;
+    margin-bottom: var(--space-md);
+}
+
 .match-card {
     cursor: pointer;
     transition: all 0.3s ease;

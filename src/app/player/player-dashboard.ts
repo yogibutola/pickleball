@@ -69,4 +69,27 @@ export class PlayerDashboardComponent {
             .map((p: any) => p.name)
             .join(', ');
     }
+
+    getGroupStandings(groupId: string): any[] {
+        if (!groupId) return [];
+
+        const allStandings = this.standings();
+        const completedMatches = this.completedMatches();
+
+        // Get all player IDs from matches in this group
+        const groupPlayerIds = new Set<string>();
+        completedMatches
+            .filter(m => m.groupId === groupId)
+            .forEach(match => {
+                match.players.forEach(p => groupPlayerIds.add(p.id.toLowerCase()));
+            });
+
+        // Filter standings to only include players in this group
+        const groupStandings = allStandings.filter((standing: any) =>
+            groupPlayerIds.has(standing.email.toLowerCase())
+        );
+
+        // Sort by total score descending
+        return groupStandings.sort((a: any, b: any) => b.totalScore - a.totalScore);
+    }
 }
